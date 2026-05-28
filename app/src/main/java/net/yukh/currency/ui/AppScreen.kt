@@ -36,6 +36,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -227,6 +228,9 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        // подтянуть время последнего обновления при входе/смене источника
+        LaunchedEffect(settings.source) { vm.refreshLastUpdate() }
+
         Text("Источник курсов", style = MaterialTheme.typography.titleMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
@@ -239,6 +243,20 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
                 onClick = { vm.setSource("google") },
                 label = { Text("🌐 Google") },
             )
+        }
+
+        HorizontalDivider()
+        Text("Курсы", style = MaterialTheme.typography.titleMedium)
+        Button(
+            onClick = { vm.refreshRates() },
+            enabled = !vm.refreshing,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(if (vm.refreshing) "Обновляю…" else "🔄 Обновить курсы сейчас")
+        }
+        Text(vm.lastUpdate, style = MaterialTheme.typography.bodySmall)
+        vm.refreshError?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -270,7 +288,7 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
 }
 
 private const val SITE_URL = "https://yukh.net"
-private const val BOT_URL = "https://t.me/"  // TODO: заменить на @username бота
+private const val BOT_URL = "https://t.me/netadm_currency_bot"
 
 @Composable
 private fun AboutScreen() {

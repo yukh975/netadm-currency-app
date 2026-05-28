@@ -50,6 +50,15 @@ class RatesRepository(
         }
     }
 
+    /** Текущая закэшированная таблица (без обращения в сеть), или null. */
+    suspend fun cachedTable(source: String): RateTable? {
+        val id = sources[source]?.id ?: "cbr"
+        if (cache[id] == null) {
+            settings.loadCache(id)?.let { runCatching { cache[id] = deserialize(it) } }
+        }
+        return cache[id]
+    }
+
     suspend fun refresh(source: String, needed: Set<String>): Pair<RateTable, Boolean> {
         val prev = cache[sources[source]?.id ?: "cbr"]
         val table = getTable(source, needed, force = true)

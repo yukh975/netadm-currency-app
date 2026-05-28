@@ -37,8 +37,37 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var searchResults by mutableStateOf<List<String>>(emptyList())
         private set
+    var lastUpdate by mutableStateOf("Обновлено: —")
+        private set
+    var refreshing by mutableStateOf(false)
+        private set
+    var refreshError by mutableStateOf<String?>(null)
+        private set
 
     fun onInputChange(v: String) { input = v }
+
+    /** Показать время последнего обновления для текущего источника (без сети). */
+    fun refreshLastUpdate() = viewModelScope.launch {
+        val s = store.current()
+        val table = repo.cachedTable(s.source)
+        lastUpdate = if (table != null) "Обновлено: " + Converter.lastUpdated(table) else "Обновлено: —"
+    }
+
+    /** Принудительно обновить курсы текущего источника. */
+    fun refreshRates() = viewModelScope.launch {
+        val s = store.current()
+        val needed = (s.favorites + s.base).toSet()
+        refreshing = true
+        refreshError = null
+        try {
+            val table = repo.getTable(s.source, needed, force = true)
+            lastUpdate = "Обновлено: " + Converter.lastUpdated(table)
+        } catch (e: Exception) {
+            refreshError = "Не удалось обновить курсы. Проверьте соединение."
+        } finally {
+            refreshing = false
+        }
+    }
 
     fun convert() {
         error = null

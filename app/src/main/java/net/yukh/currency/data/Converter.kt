@@ -61,6 +61,12 @@ object Converter {
         }
     }
 
+    fun lastUpdated(table: RateTable): String {
+        val tz = TimeZone.getTimeZone("Europe/Moscow")
+        val fmt = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.US).apply { timeZone = tz }
+        return fmt.format(Date(table.fetchedAt)) + " МСК"
+    }
+
     private val sourceLabels = mapOf("cbr" to "🇷🇺 ЦБ РФ", "google" to "🌐 Google")
 
     fun freshness(table: RateTable): String {
