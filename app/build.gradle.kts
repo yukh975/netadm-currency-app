@@ -20,7 +20,7 @@ fun signingValue(propKey: String, envKey: String): String? =
 // Локально (без CI) — versionCode 1, versionName 0.1.0.
 val ciBuild = System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
 val appVersionCode = ciBuild ?: 1
-val appVersionName = "0.0.${ciBuild ?: 0}"
+val appVersionName = "0.1.${ciBuild ?: 0}"
 
 android {
     namespace = "net.yukh.currency"
