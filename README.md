@@ -47,6 +47,49 @@
 # APK: app/build/outputs/apk/debug/app-debug.apk
 ```
 
+## Подпись релиза
+
+Релизный APK/AAB подписывается из секретов, которых нет в репозитории. Gradle
+берёт их из `keystore.properties` (локально) или из переменных окружения (в CI).
+
+### 1. Создать keystore (один раз, хранить вечно!)
+
+В Android Studio: **Build → Generate Signed App Bundle / APK → Create new…**
+Либо командой (нужен JDK):
+
+```bash
+keytool -genkeypair -v -keystore release.keystore -alias currency \
+  -keyalg RSA -keysize 2048 -validity 10000
+```
+
+> ⚠️ Потеря keystore или пароля делает невозможным обновление приложения в
+> Google Play. Сделай резервную копию файла и паролей в надёжном месте.
+
+### 2. Локальная подпись (Android Studio)
+
+Создай `keystore.properties` в корне (он в `.gitignore`):
+
+```properties
+storeFile=/абсолютный/путь/release.keystore
+storePassword=ПАРОЛЬ_ХРАНИЛИЩА
+keyAlias=currency
+keyPassword=ПАРОЛЬ_КЛЮЧА
+```
+
+### 3. Подпись в GitLab CI
+
+Добавь переменные в **Settings → CI/CD → Variables** (Protected):
+
+| Переменная | Значение |
+|---|---|
+| `KEYSTORE_BASE64` | `base64 -i release.keystore` (одной строкой) |
+| `KEYSTORE_PASSWORD` | пароль хранилища |
+| `KEY_ALIAS` | `currency` |
+| `KEY_PASSWORD` | пароль ключа |
+
+Задача `assembleRelease` появляется в пайплайне только при заданном
+`KEYSTORE_BASE64` и собирает подписанные `*.apk` (sideload) и `*.aab` (Google Play).
+
 ## Структура
 
 ```

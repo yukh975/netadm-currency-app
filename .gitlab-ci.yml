@@ -45,3 +45,22 @@ assembleDebug:
     paths:
       - app/build/outputs/apk/debug/*.apk
     expire_in: 1 week
+
+# Подписанный релиз (APK + AAB). Запускается только если задана переменная
+# KEYSTORE_BASE64 (CI/CD Variables). Нужны также: KEYSTORE_PASSWORD,
+# KEY_ALIAS, KEY_PASSWORD.
+assembleRelease:
+  stage: build
+  rules:
+    - if: '$KEYSTORE_BASE64'
+  script:
+    - echo "$KEYSTORE_BASE64" | base64 -d > "$CI_PROJECT_DIR/release.keystore"
+    - export KEYSTORE_FILE="$CI_PROJECT_DIR/release.keystore"
+    - ./gradlew --no-daemon assembleRelease bundleRelease
+    - rm -f "$CI_PROJECT_DIR/release.keystore"
+  artifacts:
+    name: "currency-converter-release-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - app/build/outputs/apk/release/*.apk
+      - app/build/outputs/bundle/release/*.aab
+    expire_in: 1 month

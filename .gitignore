@@ -9,3 +9,9 @@ captures/
 .externalNativeBuild/
 .cxx/
 .android-sdk/
+
+# Секреты подписи — никогда не коммитим
+keystore.properties
+*.keystore
+*.jks
+release.keystore
