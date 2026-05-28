@@ -8,12 +8,26 @@ variables:
   ANDROID_CMDLINE_TOOLS: "11076708"
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
 
-# Не запускать пайплайн при создании тега (релиз сам создаёт тег) — без петли.
+# Когда создавать пайплайн.
 workflow:
   rules:
+    # не запускать на создание тега (релиз сам делает тег) — без петли
     - if: '$CI_COMMIT_TAG'
       when: never
-    - when: always
+    # ручной запуск из UI/CLI — всегда (на случай пересборки без изменений кода)
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    # собирать только при изменении кода или условий сборки
+    - changes:
+        - app/**/*
+        - gradle/**/*
+        - settings.gradle.kts
+        - build.gradle.kts
+        - gradle.properties
+        - gradlew
+        - gradlew.bat
+        - .gitlab-ci.yml
+    # иначе (README, CHANGELOG, store/* и пр.) — пайплайн не создаётся
+    - when: never
 
 stages:
   - build
