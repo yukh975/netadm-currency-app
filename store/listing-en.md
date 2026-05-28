@@ -26,6 +26,9 @@ device only.
 ## What's new (release 0.1.0)
 First release: CBR and Google conversion, favorites, cache, daily summary.
 
+## Privacy policy (URL)
+https://telegra.ph/Privacy-Policy--Currency-Converter-05-28
+
 ## Category
 Finance
 
