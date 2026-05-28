@@ -102,8 +102,8 @@ upload-packages:
   before_script: []
   cache: {}
   variables:
-    VERSION: "0.1.$CI_PIPELINE_IID"
-    PKG_BASE: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/currency-converter/0.1.$CI_PIPELINE_IID"
+    VERSION: "0.0.$CI_PIPELINE_IID"
+    PKG_BASE: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/currency-converter/0.0.$CI_PIPELINE_IID"
   script:
     - apk add --no-cache curl
     - 'curl --fail --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file app/build/outputs/apk/release/app-release.apk "$PKG_BASE/currency-converter-$VERSION.apk"'
@@ -120,21 +120,21 @@ create-release:
   before_script: []
   cache: {}
   variables:
-    VERSION: "0.1.$CI_PIPELINE_IID"
+    VERSION: "0.0.$CI_PIPELINE_IID"
   script:
     - echo "Создаю релиз v$VERSION"
   release:
-    tag_name: "v0.1.$CI_PIPELINE_IID"
-    name: "Конвертер валют v0.1.$CI_PIPELINE_IID"
+    tag_name: "v0.0.$CI_PIPELINE_IID"
+    name: "Конвертер валют v0.0.$CI_PIPELINE_IID"
     ref: "$CI_COMMIT_SHA"
     description: "Автоматическая сборка пайплайна #$CI_PIPELINE_IID. Список изменений — в CHANGELOG.md."
     assets:
       links:
         - name: "APK (app-release)"
-          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/currency-converter/0.1.$CI_PIPELINE_IID/currency-converter-0.1.$CI_PIPELINE_IID.apk"
+          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/currency-converter/0.0.$CI_PIPELINE_IID/currency-converter-0.0.$CI_PIPELINE_IID.apk"
           link_type: "package"
         - name: "AAB (app-release)"
-          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/currency-converter/0.1.$CI_PIPELINE_IID/currency-converter-0.1.$CI_PIPELINE_IID.aab"
+          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/currency-converter/0.0.$CI_PIPELINE_IID/currency-converter-0.0.$CI_PIPELINE_IID.aab"
           link_type: "package"
 
 # ---- Публикация (ручной запуск, активна при наличии креденшелов) ----
