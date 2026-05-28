@@ -10,6 +10,7 @@ variables:
 
 stages:
   - build
+  - deploy
 
 cache:
   key: "$CI_COMMIT_REF_SLUG"
@@ -64,3 +65,43 @@ assembleRelease:
       - app/build/outputs/apk/release/*.apk
       - app/build/outputs/bundle/release/*.aab
     expire_in: 1 month
+
+# ---- Публикация (ручной запуск, активна при наличии креденшелов) ----
+# Берёт собранный артефакт из assembleRelease, заливает в магазин.
+# Не трогает Android-сборку, поэтому build остаётся стабильным.
+
+# Google Play. Нужна переменная PLAY_SA_JSON_B64 = base64(service account JSON).
+publish-googleplay:
+  stage: deploy
+  image: python:3.12-slim
+  needs:
+    - job: assembleRelease
+      artifacts: true
+  rules:
+    - if: '$PLAY_SA_JSON_B64'
+      when: manual
+  before_script: []
+  cache: {}
+  script:
+    - pip install --quiet google-api-python-client google-auth
+    - echo "$PLAY_SA_JSON_B64" | base64 -d > sa.json
+    - python3 store/publish_googleplay.py --aab app/build/outputs/bundle/release/app-release.aab --package net.yukh.currency --track internal --credentials sa.json
+    - rm -f sa.json
+
+# RuStore. Нужны RUSTORE_KEY_ID и RUSTORE_KEY_B64 = base64(приватный RSA PEM).
+publish-rustore:
+  stage: deploy
+  image: python:3.12-slim
+  needs:
+    - job: assembleRelease
+      artifacts: true
+  rules:
+    - if: '$RUSTORE_KEY_ID && $RUSTORE_KEY_B64'
+      when: manual
+  before_script: []
+  cache: {}
+  script:
+    - pip install --quiet requests cryptography
+    - echo "$RUSTORE_KEY_B64" | base64 -d > rustore_key.pem
+    - python3 store/rustore_publish.py --apk app/build/outputs/apk/release/app-release.apk --package net.yukh.currency --key-id "$RUSTORE_KEY_ID" --key rustore_key.pem
+    - rm -f rustore_key.pem

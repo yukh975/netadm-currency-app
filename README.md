@@ -90,6 +90,29 @@ keyPassword=ПАРОЛЬ_КЛЮЧА
 Задача `assembleRelease` появляется в пайплайне только при заданном
 `KEYSTORE_BASE64` и собирает подписанные `*.apk` (sideload) и `*.aab` (Google Play).
 
+## Публикация в магазины
+
+Материалы карточек и политика конфиденциальности — в каталоге `store/`
+(тексты RU/EN, `privacy-policy-*.md`). Политику нужно разместить по публичному
+URL (магазины требуют ссылку).
+
+Автопубликация настроена в `.gitlab-ci.yml` отдельными ручными задачами
+(`stage: deploy`), они берут собранный AAB/APK из `assembleRelease` и не влияют
+на сборку. Запускаются вручную и только при наличии креденшелов:
+
+**Google Play** — задача `publish-googleplay` (скрипт `store/publish_googleplay.py`,
+Android Publisher API). Переменная CI:
+- `PLAY_SA_JSON_B64` = `base64` от JSON сервис-аккаунта Play Console.
+
+**RuStore** — задача `publish-rustore` (скрипт `store/rustore_publish.py`, RuStore API).
+Переменные CI:
+- `RUSTORE_KEY_ID` — идентификатор ключа из консоли RuStore;
+- `RUSTORE_KEY_B64` = `base64` от приватного RSA-ключа (PEM).
+
+Первую отправку (создание приложения, заполнение карточки, модерация) делают
+вручную в консолях магазинов; CI-задачи автоматизируют загрузку новых сборок.
+Перед каждым релизом поднимай `versionCode`/`versionName` в `app/build.gradle.kts`.
+
 ## Структура
 
 ```
