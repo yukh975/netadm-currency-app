@@ -8,8 +8,16 @@ variables:
   ANDROID_CMDLINE_TOOLS: "11076708"
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
 
+# Не запускать пайплайн при создании тега (релиз сам создаёт тег) — без петли.
+workflow:
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - when: always
+
 stages:
   - build
+  - release
   - deploy
 
 cache:
@@ -65,6 +73,55 @@ assembleRelease:
       - app/build/outputs/apk/release/*.apk
       - app/build/outputs/bundle/release/*.aab
     expire_in: 1 month
+
+# ---- Релиз в GitLab: APK/AAB в Package Registry + запись в Releases ----
+
+# Заливаем подписанные артефакты в Generic Package Registry (стабильные ссылки).
+upload-packages:
+  stage: release
+  image: alpine:latest
+  needs:
+    - job: assembleRelease
+      artifacts: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "android" && $KEYSTORE_BASE64'
+  before_script: []
+  cache: {}
+  variables:
+    VERSION: "0.1.$CI_PIPELINE_IID"
+    PKG_BASE: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/currency-converter/0.1.$CI_PIPELINE_IID"
+  script:
+    - apk add --no-cache curl
+    - 'curl --fail --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file app/build/outputs/apk/release/app-release.apk "$PKG_BASE/currency-converter-$VERSION.apk"'
+    - 'curl --fail --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file app/build/outputs/bundle/release/app-release.aab "$PKG_BASE/currency-converter-$VERSION.aab"'
+
+# Создаём GitLab Release с тегом и ссылками на артефакты в Package Registry.
+create-release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  needs:
+    - job: upload-packages
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "android" && $KEYSTORE_BASE64'
+  before_script: []
+  cache: {}
+  variables:
+    VERSION: "0.1.$CI_PIPELINE_IID"
+  script:
+    - echo "Создаю релиз v$VERSION"
+  release:
+    tag_name: "v0.1.$CI_PIPELINE_IID"
+    name: "Конвертер валют v0.1.$CI_PIPELINE_IID"
+    ref: "$CI_COMMIT_SHA"
+    description: "Автоматическая сборка пайплайна #$CI_PIPELINE_IID. Список изменений — в CHANGELOG.md."
+    assets:
+      links:
+        - name: "APK (app-release)"
+          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/currency-converter/0.1.$CI_PIPELINE_IID/currency-converter-0.1.$CI_PIPELINE_IID.apk"
+          link_type: "package"
+        - name: "AAB (app-release)"
+          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/currency-converter/0.1.$CI_PIPELINE_IID/currency-converter-0.1.$CI_PIPELINE_IID.aab"
+          link_type: "package"
 
 # ---- Публикация (ручной запуск, активна при наличии креденшелов) ----
 # Берёт собранный артефакт из assembleRelease, заливает в магазин.

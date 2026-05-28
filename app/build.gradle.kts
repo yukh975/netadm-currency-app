@@ -16,6 +16,12 @@ val keystoreProps = Properties().apply {
 fun signingValue(propKey: String, envKey: String): String? =
     keystoreProps.getProperty(propKey) ?: System.getenv(envKey)
 
+// Версия растёт автоматически на каждой сборке в CI (номер пайплайна).
+// Локально (без CI) — versionCode 1, versionName 0.1.0.
+val ciBuild = System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
+val appVersionCode = ciBuild ?: 1
+val appVersionName = "0.1.${ciBuild ?: 0}"
+
 android {
     namespace = "net.yukh.currency"
     compileSdk = 34
@@ -24,8 +30,8 @@ android {
         applicationId = "net.yukh.currency"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
     }
 
     signingConfigs {
@@ -63,6 +69,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"

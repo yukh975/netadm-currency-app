@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import net.yukh.currency.BuildConfig
 import net.yukh.currency.data.AppSettings
 import net.yukh.currency.data.Currencies
 
@@ -307,7 +308,7 @@ private fun AboutScreen() {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("💱 Конвертер валют", style = MaterialTheme.typography.headlineSmall)
-        Text("Версия 0.1.0", style = MaterialTheme.typography.bodySmall)
+        Text("Версия ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall)
 
         Text(
             "Конвертер валют по курсам ЦБ РФ или Google. Выберите источник и " +
