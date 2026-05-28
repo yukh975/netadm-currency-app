@@ -36,8 +36,33 @@ before_script:
   - sdkmanager --install "platforms;android-${ANDROID_COMPILE_SDK}" "build-tools;${ANDROID_BUILD_TOOLS}" "platform-tools" > /dev/null
   - chmod +x ./gradlew
 
+# Разовая генерация release-keystore на раннере. Запуск только при GEN_KEYSTORE=yes.
+# Артефакты (keystore + пароли) забираются и сохраняются в CI/CD Variables, после
+# чего эта задача удаляется из конфига.
+gen-keystore:
+  stage: build
+  rules:
+    - if: '$GEN_KEYSTORE == "yes"'
+  before_script: []
+  script:
+    - STOREPASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 28)
+    - KEYALIAS=currency
+    - keytool -genkeypair -v -keystore release.keystore -alias "$KEYALIAS" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$STOREPASS" -keypass "$STOREPASS" -dname "CN=Currency Converter, O=yukh, C=RU"
+    - base64 -w0 release.keystore > keystore.b64
+    - printf 'KEYSTORE_PASSWORD=%s\nKEY_PASSWORD=%s\nKEY_ALIAS=%s\n' "$STOREPASS" "$STOREPASS" "$KEYALIAS" > creds.env
+  artifacts:
+    paths:
+      - keystore.b64
+      - creds.env
+      - release.keystore
+    expire_in: 1 day
+
 assembleDebug:
   stage: build
+  rules:
+    - if: '$GEN_KEYSTORE == "yes"'
+      when: never
+    - when: on_success
   script:
     - ./gradlew --no-daemon assembleDebug
   artifacts:
