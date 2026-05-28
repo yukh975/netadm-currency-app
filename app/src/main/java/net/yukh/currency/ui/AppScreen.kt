@@ -109,7 +109,7 @@ private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Основная валюта", style = MaterialTheme.typography.titleMedium)
+        Text("Исходная валюта", style = MaterialTheme.typography.titleMedium)
         Row(
             Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -287,7 +287,7 @@ private fun AboutScreen() {
 
         Text(
             "Конвертер валют по курсам ЦБ РФ или Google. Выберите источник и " +
-                "основную валюту, добавьте нужные валюты в избранное и вводите сумму — " +
+                "исходную валюту, добавьте нужные валюты в избранное и вводите сумму — " +
                 "получите перевод во все избранные. Есть удобный формат для дешёвых " +
                 "валют, кэш курсов и ежедневная сводка около 17:00 МСК.",
             style = MaterialTheme.typography.bodyMedium,

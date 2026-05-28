@@ -50,7 +50,7 @@ object Converter {
 
         return targets.map { code ->
             val baseMark = code == base && code != src
-            val label = Currencies.label(code) + if (baseMark) "  (основная)" else ""
+            val label = Currencies.label(code) + if (baseMark) "  (исходная)" else ""
             if (code !in table.rates) {
                 ConversionRow(code, label, baseMark, "нет данных", "")
             } else {
