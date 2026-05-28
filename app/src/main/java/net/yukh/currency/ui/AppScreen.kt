@@ -66,25 +66,29 @@ fun AppScreen(vm: MainViewModel = viewModel()) {
                     selected = tab == 0,
                     onClick = { tab = 0 },
                     icon = { Icon(Icons.Filled.SwapVert, contentDescription = null) },
-                    label = { Text("Конвертация") },
+                    label = { Text("Курс", maxLines = 1) },
+                    alwaysShowLabel = false,
                 )
                 NavigationBarItem(
                     selected = tab == 1,
                     onClick = { tab = 1 },
                     icon = { Icon(Icons.Filled.Star, contentDescription = null) },
-                    label = { Text("Избранное") },
+                    label = { Text("Избранное", maxLines = 1) },
+                    alwaysShowLabel = false,
                 )
                 NavigationBarItem(
                     selected = tab == 2,
                     onClick = { tab = 2 },
                     icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-                    label = { Text("Настройки") },
+                    label = { Text("Настройки", maxLines = 1) },
+                    alwaysShowLabel = false,
                 )
                 NavigationBarItem(
                     selected = tab == 3,
                     onClick = { tab = 3 },
                     icon = { Icon(Icons.Filled.Info, contentDescription = null) },
-                    label = { Text("О программе") },
+                    label = { Text("О прогр.", maxLines = 1) },
+                    alwaysShowLabel = false,
                 )
             }
         },
