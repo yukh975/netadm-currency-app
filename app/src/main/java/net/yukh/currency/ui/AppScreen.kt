@@ -28,10 +28,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,6 +47,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -61,35 +61,37 @@ fun AppScreen(vm: MainViewModel = viewModel()) {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = tab == 0,
-                    onClick = { tab = 0 },
-                    icon = { Icon(Icons.Filled.SwapVert, contentDescription = null) },
-                    label = { Text("Курс", maxLines = 1) },
-                    alwaysShowLabel = false,
-                )
-                NavigationBarItem(
-                    selected = tab == 1,
-                    onClick = { tab = 1 },
-                    icon = { Icon(Icons.Filled.Star, contentDescription = null) },
-                    label = { Text("Избранное", maxLines = 1) },
-                    alwaysShowLabel = false,
-                )
-                NavigationBarItem(
-                    selected = tab == 2,
-                    onClick = { tab = 2 },
-                    icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-                    label = { Text("Настройки", maxLines = 1) },
-                    alwaysShowLabel = false,
-                )
-                NavigationBarItem(
-                    selected = tab == 3,
-                    onClick = { tab = 3 },
-                    icon = { Icon(Icons.Filled.Info, contentDescription = null) },
-                    label = { Text("О прогр.", maxLines = 1) },
-                    alwaysShowLabel = false,
-                )
+            val tabs = listOf(
+                Icons.Filled.SwapVert to "Конвертация",
+                Icons.Filled.Star to "Избранное",
+                Icons.Filled.Settings to "Настройки",
+                Icons.Filled.Info to "О программе",
+            )
+            Surface(tonalElevation = 3.dp) {
+                Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                    ) {
+                        tabs.forEachIndexed { i, item ->
+                            IconButton(onClick = { tab = i }) {
+                                Icon(
+                                    item.first,
+                                    contentDescription = item.second,
+                                    tint = if (tab == i) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                    Text(
+                        tabs[tab].second,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         },
     ) { padding ->
