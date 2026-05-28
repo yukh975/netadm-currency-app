@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapVert
@@ -32,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,7 +42,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -72,6 +79,12 @@ fun AppScreen(vm: MainViewModel = viewModel()) {
                     icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
                     label = { Text("Настройки") },
                 )
+                NavigationBarItem(
+                    selected = tab == 3,
+                    onClick = { tab = 3 },
+                    icon = { Icon(Icons.Filled.Info, contentDescription = null) },
+                    label = { Text("О программе") },
+                )
             }
         },
     ) { padding ->
@@ -79,7 +92,8 @@ fun AppScreen(vm: MainViewModel = viewModel()) {
             when (tab) {
                 0 -> ConvertScreen(vm, settings)
                 1 -> FavoritesScreen(vm, settings)
-                else -> SettingsScreen(vm, settings)
+                2 -> SettingsScreen(vm, settings)
+                else -> AboutScreen()
             }
         }
     }
@@ -87,6 +101,7 @@ fun AppScreen(vm: MainViewModel = viewModel()) {
 
 @Composable
 private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
+    val focusManager = LocalFocusManager.current
     Column(
         Modifier
             .fillMaxSize()
@@ -111,12 +126,25 @@ private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
         OutlinedTextField(
             value = vm.input,
             onValueChange = vm::onInputChange,
-            label = { Text("Сумма: 1000 или USD 100") },
+            label = { Text("Сумма (например 1000)") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
-            keyboardActions = KeyboardActions(onDone = { vm.convert() }),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Decimal,
+                imeAction = ImeAction.Done,
+            ),
+            keyboardActions = KeyboardActions(onDone = {
+                focusManager.clearFocus()
+                vm.convert()
+            }),
         )
-        Button(onClick = { vm.convert() }, modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = {
+                focusManager.clearFocus()
+                vm.convert()
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             Text("Конвертировать")
         }
 
@@ -238,5 +266,50 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
                 "ЦБ РФ (cbr-xml-daily.ru) и Google (open.er-api.com).",
             style = MaterialTheme.typography.bodySmall,
         )
+    }
+}
+
+private const val SITE_URL = "https://yukh.net"
+private const val BOT_URL = "https://t.me/"  // TODO: заменить на @username бота
+
+@Composable
+private fun AboutScreen() {
+    val uri = LocalUriHandler.current
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text("💱 Конвертер валют", style = MaterialTheme.typography.headlineSmall)
+        Text("Версия 0.1.0", style = MaterialTheme.typography.bodySmall)
+
+        Text(
+            "Конвертер валют по курсам ЦБ РФ или Google. Выберите источник и " +
+                "основную валюту, добавьте нужные валюты в избранное и вводите сумму — " +
+                "получите перевод во все избранные. Есть удобный формат для дешёвых " +
+                "валют, кэш курсов и ежедневная сводка около 17:00 МСК.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+
+        HorizontalDivider()
+
+        TextButton(onClick = { uri.openUri(SITE_URL) }) {
+            Text("🌐 Сайт разработчика — yukh.net")
+        }
+        TextButton(onClick = { uri.openUri(BOT_URL) }) {
+            Text("✈️ Telegram-бот с тем же функционалом")
+        }
+        Text(
+            "Тот же конвертер работает Telegram-ботом: те же источники (ЦБ РФ / Google), " +
+                "избранные валюты, основная валюта и ежедневная рассылка курсов.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+
+        HorizontalDivider()
+
+        Text("© 2026 Yuriy Khachaturian", style = MaterialTheme.typography.bodySmall)
+        Text("Лицензия MIT", style = MaterialTheme.typography.bodySmall)
     }
 }
