@@ -44,8 +44,9 @@ gen-keystore:
   rules:
     - if: '$GEN_KEYSTORE == "yes"'
   before_script: []
+  cache: {}
   script:
-    - STOREPASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 28)
+    - STOREPASS=$(head -c 24 /dev/urandom | base64 | tr -d '/+=')
     - KEYALIAS=currency
     - keytool -genkeypair -v -keystore release.keystore -alias "$KEYALIAS" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$STOREPASS" -keypass "$STOREPASS" -dname "CN=Currency Converter, O=yukh, C=RU"
     - base64 -w0 release.keystore > keystore.b64
