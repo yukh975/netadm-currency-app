@@ -1,0 +1,47 @@
+# Сборка Android APK в Docker-раннере GitLab.
+# Образ с JDK 17, Android SDK ставится через cmdline-tools.
+image: eclipse-temurin:17-jdk-jammy
+
+variables:
+  ANDROID_COMPILE_SDK: "34"
+  ANDROID_BUILD_TOOLS: "34.0.0"
+  ANDROID_CMDLINE_TOOLS: "11076708"
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+
+stages:
+  - build
+
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .gradle/
+    - .android-sdk/
+
+before_script:
+  - apt-get --quiet update --yes
+  - apt-get --quiet install --yes wget unzip
+  - export ANDROID_HOME="$CI_PROJECT_DIR/.android-sdk"
+  - export ANDROID_SDK_ROOT="$ANDROID_HOME"
+  - mkdir -p "$ANDROID_HOME/cmdline-tools"
+  - |
+    if [ ! -d "$ANDROID_HOME/cmdline-tools/latest" ]; then
+      wget --quiet --output-document=cmdline-tools.zip \
+        "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS}_latest.zip"
+      unzip -q cmdline-tools.zip -d "$ANDROID_HOME/cmdline-tools"
+      mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
+      rm cmdline-tools.zip
+    fi
+  - export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools"
+  - yes | sdkmanager --licenses > /dev/null || true
+  - sdkmanager --install "platforms;android-${ANDROID_COMPILE_SDK}" "build-tools;${ANDROID_BUILD_TOOLS}" "platform-tools" > /dev/null
+  - chmod +x ./gradlew
+
+assembleDebug:
+  stage: build
+  script:
+    - ./gradlew --no-daemon assembleDebug
+  artifacts:
+    name: "currency-converter-debug-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - app/build/outputs/apk/debug/*.apk
+    expire_in: 1 week
