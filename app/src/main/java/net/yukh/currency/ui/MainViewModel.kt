@@ -15,6 +15,7 @@ import net.yukh.currency.data.AppSettings
 import net.yukh.currency.data.ConversionRow
 import net.yukh.currency.data.Converter
 import net.yukh.currency.data.Currencies
+import net.yukh.currency.work.DailyUpdateWorker
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -67,7 +68,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         summaryLoading = true
         summaryError = null
         try {
-            val table = repo.getTable(s.source, needed)
+            // принудительно обновляем из источника — сводка всегда свежая
+            val table = repo.getTable(s.source, needed, force = true)
             summary = Converter.summary(table, s.base, s.favorites, s.smartUnits)
             summaryFreshness = Converter.freshness(table)
         } catch (e: Exception) {
@@ -148,6 +150,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun toggleSmart(v: Boolean) = viewModelScope.launch { store.setSmart(v) }
 
     fun toggleNotify(v: Boolean) = viewModelScope.launch { store.setNotify(v) }
+
+    /** Сохранить время ежедневной сводки и сразу перепланировать уведомление. */
+    fun setNotifyTime(hour: Int, minute: Int) = viewModelScope.launch {
+        store.setNotifyTime(hour, minute)
+        DailyUpdateWorker.ensureScheduled(appCtx, hour, minute)
+    }
 
     fun addFavorite(code: String) = viewModelScope.launch {
         val s = store.current()

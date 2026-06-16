@@ -1,6 +1,9 @@
 package net.yukh.currency
 
 import android.app.Application
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import net.yukh.currency.data.RatesRepository
 import net.yukh.currency.data.SettingsStore
 import net.yukh.currency.work.DailyUpdateWorker
@@ -20,6 +23,10 @@ class CurrencyApp : Application() {
         settingsStore = SettingsStore(this)
         repository = RatesRepository(settingsStore, client)
         DailyUpdateWorker.createChannel(this)
-        DailyUpdateWorker.ensureScheduled(this)
+        // планируем уведомление по сохранённому пользователем времени
+        CoroutineScope(Dispatchers.Default).launch {
+            val s = settingsStore.current()
+            DailyUpdateWorker.ensureScheduled(this@CurrencyApp, s.notifyHour, s.notifyMinute)
+        }
     }
 }

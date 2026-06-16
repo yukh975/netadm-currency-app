@@ -1,5 +1,6 @@
 package net.yukh.currency.ui
 
+import android.app.TimePickerDialog
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
@@ -56,9 +58,22 @@ import net.yukh.currency.data.AppSettings
 import net.yukh.currency.data.Currencies
 
 @Composable
-fun AppScreen(vm: MainViewModel = viewModel()) {
+fun AppScreen(
+    openSummary: Boolean = false,
+    onSummaryConsumed: () -> Unit = {},
+    vm: MainViewModel = viewModel(),
+) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(0) }
+
+    // открытие из уведомления: вкладка «Конвертация» + загрузка свежей сводки
+    LaunchedEffect(openSummary) {
+        if (openSummary) {
+            tab = 0
+            vm.showSummary()
+            onSummaryConsumed()
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -304,9 +319,31 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Ежедневное уведомление", style = MaterialTheme.typography.bodyLarge)
-                Text("Сводка курсов около 17:00 МСК", style = MaterialTheme.typography.bodySmall)
+                Text("Сводка курсов избранных валют (МСК)", style = MaterialTheme.typography.bodySmall)
             }
             Switch(checked = settings.notify, onCheckedChange = { vm.toggleNotify(it) })
+        }
+
+        val context = LocalContext.current
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Время уведомления", style = MaterialTheme.typography.bodyLarge)
+                Text("Когда присылать сводку", style = MaterialTheme.typography.bodySmall)
+            }
+            TextButton(
+                enabled = settings.notify,
+                onClick = {
+                    TimePickerDialog(
+                        context,
+                        { _, h, m -> vm.setNotifyTime(h, m) },
+                        settings.notifyHour,
+                        settings.notifyMinute,
+                        true,
+                    ).show()
+                },
+            ) {
+                Text(String.format("%02d:%02d", settings.notifyHour, settings.notifyMinute))
+            }
         }
 
         Spacer(Modifier.width(0.dp))
@@ -338,7 +375,7 @@ private fun AboutScreen() {
             "Конвертер валют по курсам ЦБ РФ или Google. Выберите источник и " +
                 "исходную валюту, добавьте нужные валюты в избранное и вводите сумму — " +
                 "получите перевод во все избранные. Есть удобный формат для дешёвых " +
-                "валют, кэш курсов и ежедневная сводка около 17:00 МСК.",
+                "валют, кэш курсов и ежедневная сводка в выбранное время.",
             style = MaterialTheme.typography.bodyMedium,
         )
 

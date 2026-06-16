@@ -16,11 +16,11 @@ val keystoreProps = Properties().apply {
 fun signingValue(propKey: String, envKey: String): String? =
     keystoreProps.getProperty(propKey) ?: System.getenv(envKey)
 
-// Версия растёт автоматически на каждой сборке в CI (номер пайплайна).
-// Локально (без CI) — versionCode 1, versionName 0.1.0.
+// versionName держим единым с Telegram-ботом (ручной SemVer, см. CHANGELOG.md).
+// versionCode — монотонно растущий: номер пайплайна CI (локально 1).
 val ciBuild = System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
 val appVersionCode = ciBuild ?: 1
-val appVersionName = "0.1.${ciBuild ?: 0}"
+val appVersionName = "0.2.0"
 
 android {
     namespace = "net.yukh.currency"

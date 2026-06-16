@@ -2,9 +2,12 @@ package net.yukh.currency.work
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import net.yukh.currency.ui.MainActivity
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -43,11 +46,21 @@ class DailyUpdateWorker(
 
     private fun notify(ctx: Context, title: String, text: String) {
         val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        // тап по уведомлению открывает приложение и показывает сводку
+        val intent = Intent(ctx, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(MainActivity.EXTRA_OPEN_SUMMARY, true)
+        }
+        val pi = PendingIntent.getActivity(
+            ctx, 0, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
         val n = NotificationCompat.Builder(ctx, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentIntent(pi)
             .setAutoCancel(true)
             .build()
         nm.notify(NOTIFICATION_ID, n)
@@ -70,9 +83,11 @@ class DailyUpdateWorker(
             }
         }
 
-        fun ensureScheduled(ctx: Context) {
+        /** Запланировать ежедневное уведомление на hour:minute (МСК).
+         *  REPLACE — чтобы смена времени в настройках сразу применялась. */
+        fun ensureScheduled(ctx: Context, hour: Int = 17, minute: Int = 0) {
             val request = PeriodicWorkRequestBuilder<DailyUpdateWorker>(1, TimeUnit.DAYS)
-                .setInitialDelay(initialDelayMs(), TimeUnit.MILLISECONDS)
+                .setInitialDelay(initialDelayMs(hour, minute), TimeUnit.MILLISECONDS)
                 .setConstraints(
                     Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -81,17 +96,17 @@ class DailyUpdateWorker(
                 .build()
             WorkManager.getInstance(ctx).enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.UPDATE,
+                ExistingPeriodicWorkPolicy.REPLACE,
                 request,
             )
         }
 
-        private fun initialDelayMs(): Long {
+        private fun initialDelayMs(hour: Int, minute: Int): Long {
             val tz = TimeZone.getTimeZone("Europe/Moscow")
             val now = Calendar.getInstance(tz)
             val next = Calendar.getInstance(tz).apply {
-                set(Calendar.HOUR_OF_DAY, 17)
-                set(Calendar.MINUTE, 0)
+                set(Calendar.HOUR_OF_DAY, hour)
+                set(Calendar.MINUTE, minute)
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }
