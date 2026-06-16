@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -85,7 +86,10 @@ fun AppScreen(
                 Icons.Filled.Info to "О программе",
             )
             Surface(tonalElevation = 3.dp) {
-                Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                // отступ под системную навигацию Android 15 (edge-to-edge при
+                // targetSdk 35), чтобы иконки не уезжали под системную панель;
+                // фон Surface при этом заполняет область до нижнего края экрана
+                Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(vertical = 6.dp)) {
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround,

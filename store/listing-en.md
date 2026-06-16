@@ -26,11 +26,11 @@ Features:
 No ads, no sign-up, no personal data collection. All settings stay on your
 device only.
 
-## What's new (release 0.3.3)
+## What's new (release 0.3.4)
 • "My currency" setting — the summary is computed against it.
 • On-demand "Rate summary" button and a configurable notification time.
 • Tapping the notification opens the app with the summary.
-• Launch stability and Android 15 compatibility.
+• Launch stability and correct layout on Android 15.
 
 ## Privacy policy (URL)
 https://telegra.ph/Privacy-Policy--Currency-Converter-06-16
