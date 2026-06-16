@@ -41,9 +41,17 @@ class RatesRepository(
             } catch (e: Exception) {
                 if (c2 != null) return@withLock c2 else throw e
             }
-            val merged = if (c2 != null && id == "google") {
-                fresh.copy(rates = c2.rates + fresh.rates)
-            } else fresh
+            // Предыдущие курсы (для динамики). У ЦБ они уже есть (поле Previous);
+            // рыночному источнику запоминаем сами: сменился день (sourceDate) →
+            // прошлые курсы становятся предыдущими, иначе переносим.
+            val prev = when {
+                fresh.prevRates != null -> fresh.prevRates
+                c2 == null -> null
+                c2.sourceDate != fresh.sourceDate -> c2.rates
+                else -> c2.prevRates
+            }
+            val mergedRates = if (c2 != null && id == "google") c2.rates + fresh.rates else fresh.rates
+            val merged = fresh.copy(rates = mergedRates, prevRates = prev)
             cache[id] = merged
             settings.saveCache(id, serialize(merged))
             merged
@@ -73,24 +81,31 @@ class RatesRepository(
         o.put("fetchedAt", t.fetchedAt)
         o.put("source", t.source)
         o.put("rates", JSONObject(t.rates.mapValues { it.value as Any }))
+        t.prevRates?.let { o.put("prevRates", JSONObject(it.mapValues { e -> e.value as Any })) }
         return o.toString()
     }
 
     private fun deserialize(s: String): RateTable {
         val o = JSONObject(s)
-        val r = o.getJSONObject("rates")
-        val rates = HashMap<String, Double>()
-        val keys = r.keys()
-        while (keys.hasNext()) {
-            val k = keys.next()
-            rates[k] = r.getDouble(k)
-        }
+        val rates = jsonToMap(o.getJSONObject("rates"))
+        val prev = o.optJSONObject("prevRates")?.let { jsonToMap(it) }
         return RateTable(
             pivot = o.optString("pivot", "RUB"),
             rates = rates,
             sourceDate = o.optString("sourceDate", ""),
             fetchedAt = o.optLong("fetchedAt", 0L),
             source = o.optString("source", "cbr"),
+            prevRates = prev,
         )
+    }
+
+    private fun jsonToMap(j: JSONObject): Map<String, Double> {
+        val m = HashMap<String, Double>()
+        val keys = j.keys()
+        while (keys.hasNext()) {
+            val k = keys.next()
+            m[k] = j.getDouble(k)
+        }
+        return m
     }
 }
