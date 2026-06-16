@@ -26,7 +26,7 @@ Features:
 No ads, no sign-up, no personal data collection. All settings stay on your
 device only.
 
-## What's new (release 0.3.4)
+## What's new (release 0.3.5)
 • "My currency" setting — the summary is computed against it.
 • On-demand "Rate summary" button and a configurable notification time.
 • Tapping the notification opens the app with the summary.

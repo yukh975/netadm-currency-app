@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
@@ -22,6 +23,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Корректный edge-to-edge: системные бары прозрачны, а их иконки
+        // (статус-бар и навигация) получают контраст под светлую тему —
+        // иначе на Android 15 системная навигация выглядит «пустой белой».
+        enableEdgeToEdge()
         requestNotificationPermissionIfNeeded()
         openSummary.value = intent?.getBooleanExtra(EXTRA_OPEN_SUMMARY, false) == true
         setContent {
