@@ -62,16 +62,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Выбрать исходную валюту в конверторе (временно, без изменения настроек). */
     fun pickSource(code: String) { pickedSource = code }
 
-    /** Сводка по запросу: относительно выбранной исходной валюты конвертора
-     *  (по умолчанию — «моя валюта»). Смена исходной валюты меняет и сводку. */
-    fun showSummary() = viewModelScope.launch {
+    /** Сводка по запросу (кнопка): относительно выбранной исходной валюты
+     *  конвертора (по умолчанию — «моя валюта»). Смена исходной меняет и сводку. */
+    fun showSummary() = viewModelScope.launch { loadSummary(pickedSource) }
+
+    /** Сводка строго относительно «моей валюты» — для открытия из уведомления
+     *  (само уведомление-сводка тоже считается от «моей валюты»). */
+    fun showSummaryForBase() = viewModelScope.launch { loadSummary(null) }
+
+    private suspend fun loadSummary(picked: String?) {
         val s = store.current()
-        val src = pickedSource ?: s.base
+        // транзиентный выбор валиден, только пока он в избранном
+        val src = picked?.takeIf { it in s.favorites } ?: s.base
         if (s.favorites.all { it == src }) {
             summaryError = "Добавьте валюты в избранное"
             summary = emptyList()
             summaryFreshness = ""
-            return@launch
+            return
         }
         val needed = (s.favorites + s.base + src).toSet()
         summaryLoading = true
@@ -131,7 +138,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
         viewModelScope.launch {
             val s = store.current()
-            val from = code ?: (pickedSource ?: s.base)
+            val from = code ?: (pickedSource?.takeIf { it in s.favorites } ?: s.base)
             val needed = (s.favorites + s.base + from).toSet()
             loading = true
             try {
@@ -176,6 +183,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun removeFavorite(code: String) = viewModelScope.launch {
         val s = store.current()
         store.setFavorites(s.favorites - code)
+        // не оставляем «висящий» выбор исходной валюты на удалённой
+        if (code == pickedSource) pickedSource = null
     }
 
     fun search(query: String) {

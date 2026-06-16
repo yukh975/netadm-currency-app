@@ -66,11 +66,12 @@ fun AppScreen(
     val settings by vm.settings.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(0) }
 
-    // открытие из уведомления: вкладка «Конвертация» + загрузка свежей сводки
+    // открытие из уведомления: вкладка «Конвертация» + сводка от «моей валюты»
+    // (как и текст уведомления), независимо от выбора в конверторе
     LaunchedEffect(openSummary) {
         if (openSummary) {
             tab = 0
-            vm.showSummary()
+            vm.showSummaryForBase()
             onSummaryConsumed()
         }
     }

@@ -8,5 +8,11 @@
 # Application-класс (ручной DI) — инстанцируется системой по имени.
 -keep class net.yukh.currency.CurrencyApp { *; }
 
+# AndroidViewModel создаётся рефлексией (ViewModelProvider) — сохраняем
+# конструктор (страховка, если consumer-правил lifecycle окажется мало).
+-keepclassmembers class net.yukh.currency.ui.MainViewModel {
+    <init>(...);
+}
+
 # org.json — часть Android SDK, но на всякий случай не трогаем имена.
 -dontwarn org.json.**
