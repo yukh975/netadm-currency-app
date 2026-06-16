@@ -62,16 +62,6 @@ before_script:
   - sdkmanager --install "platforms;android-${ANDROID_COMPILE_SDK}" "build-tools;${ANDROID_BUILD_TOOLS}" "platform-tools" > /dev/null
   - chmod +x ./gradlew
 
-assembleDebug:
-  stage: build
-  script:
-    - ./gradlew --no-daemon assembleDebug
-  artifacts:
-    name: "currency-converter-debug-$CI_COMMIT_SHORT_SHA"
-    paths:
-      - app/build/outputs/apk/debug/*.apk
-    expire_in: 1 week
-
 # Подписанный релиз (APK + AAB). Запускается только если задана переменная
 # KEYSTORE_BASE64 (CI/CD Variables). Нужны также: KEYSTORE_PASSWORD,
 # KEY_ALIAS, KEY_PASSWORD.

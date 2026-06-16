@@ -35,9 +35,12 @@
 
 ### В GitLab CI (Docker-раннер)
 
-`.gitlab-ci.yml` ставит Android SDK через cmdline-tools и собирает:
-- `assembleDebug` — отладочный APK (артефакт задачи);
+`.gitlab-ci.yml` ставит Android SDK через cmdline-tools и собирает в раннере
+только релиз:
 - `assembleRelease` — подписанные APK + AAB (при заданном `KEYSTORE_BASE64`).
+
+Отладочный APK в CI не собирается (экономия ресурсов раннеров) — для локальной
+отладки используйте `./gradlew assembleDebug` (см. ниже).
 
 **Версия:** `versionName` задаётся вручную (SemVer) и держится единым с
 Telegram-ботом — переменная `APP_VERSION` в [`.gitlab-ci.yml`](.gitlab-ci.yml) и
