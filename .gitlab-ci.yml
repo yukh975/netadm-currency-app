@@ -115,7 +115,7 @@ create-release:
   variables:
     VERSION: "$APP_VERSION"
   script:
-    - echo "Создаю релиз v$APP_VERSION (пайплайн #$CI_PIPELINE_IID)"
+    - echo "Создаю релиз v$APP_VERSION (пайплайн $CI_PIPELINE_IID)"
   release:
     tag_name: "v$APP_VERSION"
     name: "Конвертер валют v$APP_VERSION"
