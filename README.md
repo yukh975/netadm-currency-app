@@ -49,7 +49,7 @@
 **Версия:** `versionName` задаётся вручную (SemVer) и держится единым с
 Telegram-ботом — переменная `APP_VERSION` в [`.gitlab-ci.yml`](.gitlab-ci.yml) и
 `appVersionName` в [`app/build.gradle.kts`](app/build.gradle.kts) (сейчас
-`0.3.1`); поднимайте её при выпуске новой версии. `versionCode` растёт
+`0.3.2`); поднимайте её при выпуске новой версии. `versionCode` растёт
 автоматически из номера пайплайна CI. Каждая сборка ветки `android` заливает
 APK/AAB в Package Registry и создаёт **GitLab Release** с тегом `v<APP_VERSION>`
 (например `v0.2.0`) — качать удобнее из раздела **Releases**.

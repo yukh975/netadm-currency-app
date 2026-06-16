@@ -20,7 +20,7 @@ fun signingValue(propKey: String, envKey: String): String? =
 // versionCode — монотонно растущий: номер пайплайна CI (локально 1).
 val ciBuild = System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
 val appVersionCode = ciBuild ?: 1
-val appVersionName = "0.3.1"
+val appVersionName = "0.3.2"
 
 // Имя выходных файлов: currency-converter-<версия>-release.apk / .aab
 base {
@@ -53,10 +53,12 @@ android {
 
     buildTypes {
         release {
-            // R8: убираем неиспользуемый код (в т.ч. лишние иконки) и ресурсы —
-            // заметно уменьшает размер APK/AAB.
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // R8 ВРЕМЕННО ОТКЛЮЧЁН: с минификацией приложение не запускалось
+            // (R8/shrinkResources вырезал нужное на старте), а собрать/протестировать
+            // локально нельзя. Вернёмся к R8 позже, добавив точные keep-правила по
+            // логу краша — тогда получим и рабочую сборку, и маленький размер.
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
