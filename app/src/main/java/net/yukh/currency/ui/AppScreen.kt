@@ -139,8 +139,9 @@ private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
         ) {
             settings.favorites.forEach { code ->
                 FilterChip(
-                    selected = code == settings.base,
-                    onClick = { vm.setBase(code) },
+                    // временный выбор: «моя валюта» по умолчанию, без записи в настройки
+                    selected = code == (vm.pickedSource ?: settings.base),
+                    onClick = { vm.pickSource(code) },
                     label = { Text("${Currencies.info(code).flag} $code") },
                 )
             }
@@ -289,6 +290,27 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
                 onClick = { vm.setSource("google") },
                 label = { Text("🌐 Google") },
             )
+        }
+
+        HorizontalDivider()
+        Text("Моя валюта", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "Постоянная домашняя валюта. Относительно неё считается сводка в " +
+                "уведомлениях; в конверторе она подставляется как исходная по умолчанию " +
+                "(там её можно временно переключить).",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Row(
+            Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            settings.favorites.forEach { code ->
+                FilterChip(
+                    selected = code == settings.base,
+                    onClick = { vm.setBase(code) },
+                    label = { Text("${Currencies.info(code).flag} $code") },
+                )
+            }
         }
 
         HorizontalDivider()

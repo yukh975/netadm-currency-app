@@ -52,25 +52,34 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var summaryError by mutableStateOf<String?>(null)
         private set
+    // Исходная валюта конвертора: выбирается временно и НЕ сохраняется в настройки.
+    // null = использовать «мою валюту» (base) из настроек.
+    var pickedSource by mutableStateOf<String?>(null)
+        private set
 
     fun onInputChange(v: String) { input = v }
 
-    /** Сводка курсов избранных валют к основной — по запросу (как ежедневная). */
+    /** Выбрать исходную валюту в конверторе (временно, без изменения настроек). */
+    fun pickSource(code: String) { pickedSource = code }
+
+    /** Сводка по запросу: относительно выбранной исходной валюты конвертора
+     *  (по умолчанию — «моя валюта»). Смена исходной валюты меняет и сводку. */
     fun showSummary() = viewModelScope.launch {
         val s = store.current()
-        if (s.favorites.all { it == s.base }) {
+        val src = pickedSource ?: s.base
+        if (s.favorites.all { it == src }) {
             summaryError = "Добавьте валюты в избранное"
             summary = emptyList()
             summaryFreshness = ""
             return@launch
         }
-        val needed = (s.favorites + s.base).toSet()
+        val needed = (s.favorites + s.base + src).toSet()
         summaryLoading = true
         summaryError = null
         try {
             // принудительно обновляем из источника — сводка всегда свежая
             val table = repo.getTable(s.source, needed, force = true)
-            summary = Converter.summary(table, s.base, s.favorites, s.smartUnits)
+            summary = Converter.summary(table, src, s.favorites, s.smartUnits)
             summaryFreshness = Converter.freshness(table)
         } catch (e: Exception) {
             summaryError = "Источник недоступен. Попробуйте позже."
@@ -122,7 +131,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
         viewModelScope.launch {
             val s = store.current()
-            val from = code ?: s.base
+            val from = code ?: (pickedSource ?: s.base)
             val needed = (s.favorites + s.base + from).toSet()
             loading = true
             try {
@@ -139,10 +148,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Задать «мою валюту» (постоянная домашняя валюта; меняется только здесь). */
     fun setBase(code: String) = viewModelScope.launch {
         store.setBase(code)
         val s = store.current()
         if (code !in s.favorites) store.setFavorites(s.favorites + code)
+        pickedSource = null  // конвертер снова отталкивается от «моей валюты»
     }
 
     fun setSource(code: String) = viewModelScope.launch { store.setSource(code) }

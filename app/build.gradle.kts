@@ -20,7 +20,12 @@ fun signingValue(propKey: String, envKey: String): String? =
 // versionCode — монотонно растущий: номер пайплайна CI (локально 1).
 val ciBuild = System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
 val appVersionCode = ciBuild ?: 1
-val appVersionName = "0.2.0"
+val appVersionName = "0.3.0"
+
+// Имя выходных файлов: currency-converter-<версия>-release.apk / .aab
+base {
+    archivesName.set("currency-converter-$appVersionName")
+}
 
 android {
     namespace = "net.yukh.currency"
@@ -48,7 +53,10 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8: убираем неиспользуемый код (в т.ч. лишние иконки) и ресурсы —
+            // заметно уменьшает размер APK/AAB.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
