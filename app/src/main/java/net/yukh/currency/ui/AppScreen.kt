@@ -155,7 +155,8 @@ private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
         OutlinedTextField(
             value = vm.input,
             onValueChange = vm::onInputChange,
-            label = { Text("Сумма (например 1000)") },
+            // статичная подсказка внутри рамки (не «плавающий» label)
+            placeholder = { Text("Сумма (например 1000)") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(
@@ -239,7 +240,9 @@ private fun FavoritesScreen(vm: MainViewModel, settings: AppSettings) {
         OutlinedTextField(
             value = query,
             onValueChange = { query = it; vm.search(it) },
-            label = { Text("Поиск: код или название валюты") },
+            // статичная подсказка внутри рамки (не «плавающий» label),
+            // короче — чтобы помещалась в одну строку
+            placeholder = { Text("Поиск: код, название или страна") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
