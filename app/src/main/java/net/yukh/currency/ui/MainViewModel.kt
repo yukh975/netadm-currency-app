@@ -43,8 +43,41 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var refreshError by mutableStateOf<String?>(null)
         private set
+    var summary by mutableStateOf<List<String>>(emptyList())
+        private set
+    var summaryFreshness by mutableStateOf("")
+        private set
+    var summaryLoading by mutableStateOf(false)
+        private set
+    var summaryError by mutableStateOf<String?>(null)
+        private set
 
     fun onInputChange(v: String) { input = v }
+
+    /** Сводка курсов избранных валют к основной — по запросу (как ежедневная). */
+    fun showSummary() = viewModelScope.launch {
+        val s = store.current()
+        if (s.favorites.all { it == s.base }) {
+            summaryError = "Добавьте валюты в избранное"
+            summary = emptyList()
+            summaryFreshness = ""
+            return@launch
+        }
+        val needed = (s.favorites + s.base).toSet()
+        summaryLoading = true
+        summaryError = null
+        try {
+            val table = repo.getTable(s.source, needed)
+            summary = Converter.summary(table, s.base, s.favorites, s.smartUnits)
+            summaryFreshness = Converter.freshness(table)
+        } catch (e: Exception) {
+            summaryError = "Источник недоступен. Попробуйте позже."
+            summary = emptyList()
+            summaryFreshness = ""
+        } finally {
+            summaryLoading = false
+        }
+    }
 
     /** Показать время последнего обновления для текущего источника (без сети). */
     fun refreshLastUpdate() = viewModelScope.launch {

@@ -32,8 +32,8 @@ class DailyUpdateWorker(
         return try {
             val needed = (s.favorites + s.base).toSet()
             val (table, _) = app.repository.refresh(s.source, needed)
-            val rows = Converter.rows(table, s.base, s.base, s.favorites, 1.0, s.smartUnits)
-            val text = rows.joinToString("\n") { "${it.label}: ${it.result}" }
+            val lines = Converter.summary(table, s.base, s.favorites, s.smartUnits)
+            val text = lines.joinToString("\n")
             notify(applicationContext, "Курсы на сегодня", text.ifBlank { "Нет данных" })
             Result.success()
         } catch (e: Exception) {

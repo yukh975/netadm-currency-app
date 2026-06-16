@@ -178,6 +178,30 @@ private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
         if (vm.freshness.isNotEmpty()) {
             Text(vm.freshness, style = MaterialTheme.typography.bodySmall)
         }
+
+        HorizontalDivider(Modifier.padding(vertical = 4.dp))
+        Button(onClick = { vm.showSummary() }, modifier = Modifier.fillMaxWidth()) {
+            Text("🔔 Сводка курсов")
+        }
+        if (vm.summaryLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
+        vm.summaryError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        if (vm.summary.isNotEmpty()) {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        "Курсы избранных валют",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    vm.summary.forEach { line ->
+                        Text(line, style = MaterialTheme.typography.bodyMedium)
+                    }
+                    if (vm.summaryFreshness.isNotEmpty()) {
+                        Text(vm.summaryFreshness, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
     }
 }
 

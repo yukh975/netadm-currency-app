@@ -61,6 +61,43 @@ object Converter {
         }
     }
 
+    /** Фиксированный формат: всегда 2 знака после запятой. */
+    private fun format2(v: Double): String =
+        String.format(Locale.US, "%,.2f", v).replace(",", " ")
+
+    /** Строка сводки «1 EUR = 90.50 RUB» с одинаковым числом знаков (2).
+     *  Для дешёвых валют при удобном формате масштабируется количество
+     *  («100 RSD = 71.70 RUB»), но число знаков остаётся тем же. */
+    private fun summaryLine(code: String, base: String, perBase: Double, smart: Boolean): String {
+        var factor = 1L
+        if (smart && perBase > 0.0 && perBase < 1.0) {
+            while (perBase * factor < 10.0 && factor < 1_000_000_000L) factor *= 10
+        }
+        return "$factor $code = ${format2(perBase * factor)} $base"
+    }
+
+    /** Сводка: курс каждой избранной валюты к основной — по строке на валюту.
+     *  Без заголовка-суммы и обратного курса. Основная валюта пропускается. */
+    fun summary(
+        table: RateTable,
+        base: String,
+        favorites: List<String>,
+        smart: Boolean,
+    ): List<String> {
+        val out = ArrayList<String>()
+        for (code in favorites.sorted()) {
+            if (code == base) continue
+            val flag = Currencies.info(code).flag
+            if (code !in table.rates) {
+                out.add("$flag $code: нет данных")
+                continue
+            }
+            val perBase = table.convert(1.0, code, base)
+            out.add("$flag ${summaryLine(code, base, perBase, smart)}")
+        }
+        return out
+    }
+
     fun lastUpdated(table: RateTable): String {
         val tz = TimeZone.getTimeZone("Europe/Moscow")
         val fmt = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.US).apply { timeZone = tz }
