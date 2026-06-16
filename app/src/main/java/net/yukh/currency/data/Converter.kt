@@ -131,22 +131,38 @@ object Converter {
         val fmt = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.US).apply { timeZone = tz }
         val updated = fmt.format(Date(table.fetchedAt))
         val label = sourceLabels[table.source] ?: table.source
-        val courseDate = parseCourseDate(table.sourceDate, tz)
         return buildString {
             append("📊 Источник: ").append(label).append('\n')
-            if (courseDate != null) append("📅 Курс на дату: ").append(courseDate).append('\n')
+            // ЦБ — официальный курс на дату (без времени); рыночный — спот-курс,
+            // обновляется в течение суток, поэтому показываем момент обновления
+            // с временем по Москве.
+            if (table.source == "google") {
+                val moment = parseCourseDateTime(table.sourceDate, tz)
+                if (moment != null) append("🕒 Курс обновлён: ").append(moment).append(" МСК").append('\n')
+            } else {
+                val courseDate = parseCourseDate(table.sourceDate, tz)
+                if (courseDate != null) append("📅 Курс на дату: ").append(courseDate).append('\n')
+            }
             append("🕒 Обновлено: ").append(updated).append(" МСК")
         }
     }
 
-    private fun parseCourseDate(raw: String, tz: TimeZone): String? {
+    private val courseDatePatterns = listOf(
+        "yyyy-MM-dd'T'HH:mm:ssXXX",      // ЦБ РФ (ISO с таймзоной)
+        "EEE, dd MMM yyyy HH:mm:ss Z",    // open.er-api (RFC 1123)
+    )
+
+    private fun parseCourseDate(raw: String, tz: TimeZone): String? =
+        formatCourseDate(raw, "dd.MM.yyyy", tz)
+
+    /** Момент курса с временем по Москве (для рыночного источника): «dd.MM HH:mm». */
+    private fun parseCourseDateTime(raw: String, tz: TimeZone): String? =
+        formatCourseDate(raw, "dd.MM HH:mm", tz)
+
+    private fun formatCourseDate(raw: String, outPattern: String, tz: TimeZone): String? {
         if (raw.isBlank()) return null
-        val out = SimpleDateFormat("dd.MM.yyyy", Locale.US).apply { timeZone = tz }
-        val patterns = listOf(
-            "yyyy-MM-dd'T'HH:mm:ssXXX",      // ЦБ РФ
-            "EEE, dd MMM yyyy HH:mm:ss Z",    // open.er-api (RFC 1123)
-        )
-        for (p in patterns) {
+        val out = SimpleDateFormat(outPattern, Locale.US).apply { timeZone = tz }
+        for (p in courseDatePatterns) {
             try {
                 val parser = SimpleDateFormat(p, Locale.US)
                 return out.format(parser.parse(raw)!!)
