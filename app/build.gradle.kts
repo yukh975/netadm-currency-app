@@ -20,7 +20,7 @@ fun signingValue(propKey: String, envKey: String): String? =
 // versionCode — монотонно растущий: номер пайплайна CI (локально 1).
 val ciBuild = System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
 val appVersionCode = ciBuild ?: 1
-val appVersionName = "0.3.2"
+val appVersionName = "0.3.3"
 
 // Имя выходных файлов: currency-converter-<версия>-release.apk / .aab
 base {
@@ -29,12 +29,12 @@ base {
 
 android {
     namespace = "net.yukh.currency"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "net.yukh.currency"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = appVersionCode
         versionName = appVersionName
     }

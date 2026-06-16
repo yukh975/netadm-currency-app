@@ -4,33 +4,42 @@
 Currency Converter
 
 ## Short description (≤ 80 chars)
-CBR & market rates: favorite currencies, offline cache, daily summary
+CBR & market rates: my currency, favorites, offline cache, daily summary
 
 ## Full description (≤ 4000 chars)
 💱 A simple, fast currency converter using rates from the Central Bank of
-Russia (CBR) or market rates (Google).
+Russia (CBR) or market (mid-market) rates.
 
 Features:
-• Two rate sources — 🇷🇺 CBR and 🌐 Google (market rate).
+• Two rate sources — 🇷🇺 CBR and 🌐 market (mid-market) rate.
 • All CBR currencies, including less common ones.
-• Your own base currency and a favorites list — search by code, name, country.
-• Convert from your base or any currency: type "1000" or "USD 100".
+• "My currency" — a persistent home currency the summary is computed against.
+• Favorites: search by code, name, or country.
+• Convert from your currency or any other: type "1000" or "USD 100".
+  The source currency can be switched temporarily without changing settings.
 • Friendly format for cheap currencies: "100 RSD = 73 RUB" instead of fractions.
 • Rates are cached and work offline between updates.
-• Daily summary notification with your favorite rates (~17:00 Moscow time).
+• Daily summary notification with your favorite rates (time is configurable,
+  17:00 Moscow time by default); tapping it opens the summary.
 • Rate date and last refresh time always visible.
 
 No ads, no sign-up, no personal data collection. All settings stay on your
 device only.
 
-## What's new (release 0.1.0)
-First release: CBR and Google conversion, favorites, cache, daily summary.
+## What's new (release 0.3.3)
+• "My currency" setting — the summary is computed against it.
+• On-demand "Rate summary" button and a configurable notification time.
+• Tapping the notification opens the app with the summary.
+• Launch stability and Android 15 compatibility.
 
 ## Privacy policy (URL)
-https://telegra.ph/Privacy-Policy--Currency-Converter-05-28
+https://telegra.ph/Privacy-Policy--Currency-Converter-06-16
 
 ## Category
 Finance
 
+## Age rating
+3+
+
 ## Developer contact
-<your e-mail>
+yukh975@gmail.com

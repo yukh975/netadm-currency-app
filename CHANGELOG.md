@@ -5,6 +5,21 @@
 `versionCode` растёт автоматически (номер пайплайна CI). Каждая сборка ветки
 `android` публикуется как GitLab Release (раздел Releases).
 
+## [0.3.3] — 2026-06-16
+
+### Changed
+- Совместимость с требованиями Google Play 2026: `compileSdk`/`targetSdk` → 35
+  (Android 15), AGP 8.6.
+- Минимизация разрешений: убран лишний `FOREGROUND_SERVICE` (подмешивался
+  WorkManager) — приложение запрашивает только `INTERNET` и `POST_NOTIFICATIONS`
+  плюс обычные `WAKE_LOCK`/`ACCESS_NETWORK_STATE`/`RECEIVE_BOOT_COMPLETED`.
+
+### Added
+- Материалы для публикации в Google Play и RuStore: пошаговый
+  [`store/PUBLISHING.md`](store/PUBLISHING.md), графика магазинов (SVG: иконка
+  512×512, feature 1024×500, скриншоты), политика конфиденциальности на Telegraph;
+  актуализированы карточки RU/EN (e-mail, «что нового», фичи, точный источник).
+
 ## [0.3.2] — 2026-06-16
 
 ### Fixed

@@ -1,8 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Реально используемые приложением разрешения -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- WorkManager подмешивает разрешение foreground-сервиса, но мы используем
+         только отложенную периодическую задачу (без foreground service) —
+         убираем, чтобы не заявлять лишнего (важно для проверки Google Play).
+         WAKE_LOCK / ACCESS_NETWORK_STATE / RECEIVE_BOOT_COMPLETED (тоже от
+         WorkManager) — обычные install-time разрешения, нужны для надёжной
+         работы ежедневного уведомления, поэтому остаются. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"
+        tools:node="remove" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"
+        tools:node="remove" />
 
     <application
         android:name=".CurrencyApp"

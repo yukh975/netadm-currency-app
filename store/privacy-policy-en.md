@@ -1,6 +1,6 @@
 # Privacy Policy — Currency Converter
 
-_Effective date: 2026-05-28_
+_Effective date: 2026-06-16_
 
 The "Currency Converter" app (the "App") respects your privacy. This document
 explains what data is processed.
@@ -35,4 +35,4 @@ The App is not directed at children and does not collect their data.
 We may update this policy. The current version is published at this URL.
 
 ## Contact
-Privacy questions: <your e-mail>
+Privacy questions: yukh975@gmail.com

@@ -3,13 +3,13 @@
 image: eclipse-temurin:17-jdk-jammy
 
 variables:
-  ANDROID_COMPILE_SDK: "34"
-  ANDROID_BUILD_TOOLS: "34.0.0"
+  ANDROID_COMPILE_SDK: "35"
+  ANDROID_BUILD_TOOLS: "35.0.0"
   ANDROID_CMDLINE_TOOLS: "11076708"
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
   # Версия приложения — единая с Telegram-ботом (ручной SemVer, см. CHANGELOG.md).
   # Поднимать вручную при выпуске новой версии.
-  APP_VERSION: "0.3.2"
+  APP_VERSION: "0.3.3"
 
 # Когда создавать пайплайн.
 workflow:
@@ -171,5 +171,5 @@ publish-rustore:
     - pip install --quiet requests cryptography
     - echo "$RUSTORE_KEY_B64" | base64 -d > rustore_key.pem
     - APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
-    - python3 store/rustore_publish.py --apk "$APK" --package net.yukh.currency --key-id "$RUSTORE_KEY_ID" --key rustore_key.pem
+    - python3 store/rustore_publish.py --apk "$APK" --package net.yukh.currency --key-id "$RUSTORE_KEY_ID" --key rustore_key.pem --email yukh975@gmail.com --whats-new "Версия $APP_VERSION. Список изменений — в CHANGELOG.md." --min-android 7
     - rm -f rustore_key.pem

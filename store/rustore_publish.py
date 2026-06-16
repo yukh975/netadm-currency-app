@@ -50,27 +50,39 @@ def main() -> None:
     ap.add_argument("--key-id", required=True)
     ap.add_argument("--key", required=True, help="RSA private key PEM (PKCS#8)")
     ap.add_argument("--whats-new", default="Обновление приложения.")
+    ap.add_argument("--email", required=True, help="контактный e-mail разработчика (обязателен в черновике)")
+    ap.add_argument("--min-android", type=int, default=7,
+                    help="минимальная версия Android (число): minSdk 24 = Android 7")
     args = ap.parse_args()
 
     token = make_token(args.key_id, args.key)
     headers = {"Public-Token": token}
 
-    # 1. Черновик новой версии
+    # 1. Черновик новой версии.
+    # ВНИМАНИЕ: minAndroidVersion и developerContacts стали ОБЯЗАТЕЛЬНЫМИ —
+    # без них RuStore отклоняет создание версии. Схема developerContacts может
+    # отличаться по версии API — сверьтесь с docs при первом запуске.
     resp = requests.post(
         f"{API}/public/v1/application/{args.package}/version",
         headers=headers,
-        json={"whatsNew": args.whats_new, "publishType": "MANUAL"},
+        json={
+            "whatsNew": args.whats_new,
+            "publishType": "MANUAL",
+            "minAndroidVersion": args.min_android,
+            "developerContacts": [{"type": "EMAIL", "value": args.email}],
+        },
         timeout=30,
     )
     resp.raise_for_status()
     version_id = resp.json()["body"]
     print(f"Draft versionId={version_id}")
 
-    # 2. Загрузка APK
+    # 2. Загрузка APK. isMainApk=true стало ОБЯЗАТЕЛЬНЫМ параметром запроса.
     with open(args.apk, "rb") as f:
         resp = requests.post(
             f"{API}/public/v1/application/{args.package}/version/{version_id}/apk",
             headers=headers,
+            params={"servicesType": "Unknown", "isMainApk": "true"},
             files={"file": (args.apk.split("/")[-1], f, "application/vnd.android.package-archive")},
             timeout=300,
         )
