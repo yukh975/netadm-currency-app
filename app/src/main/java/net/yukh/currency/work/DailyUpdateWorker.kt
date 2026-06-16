@@ -35,9 +35,15 @@ class DailyUpdateWorker(
         return try {
             val needed = (s.favorites + s.base).toSet()
             val (table, _) = app.repository.refresh(s.source, needed)
-            val lines = Converter.summary(table, s.base, s.favorites, s.smartUnits)
-            val text = lines.joinToString("\n")
-            notify(applicationContext, "Курсы на сегодня", text.ifBlank { "Нет данных" })
+            val rows = Converter.summary(table, s.base, s.favorites, s.smartUnits)
+            // динамику в тексте уведомления показываем обычным текстом (без цвета)
+            val text = rows.joinToString("\n") { r ->
+                r.text + (r.delta?.let { " ($it)" } ?: "")
+            }
+            // заголовок — на дату, НА которую действует курс (у ЦБ это завтра)
+            val date = Converter.courseDate(table)
+            val title = if (date != null) "Курсы валют на $date" else "Курсы валют"
+            notify(applicationContext, title, text.ifBlank { "Нет данных" })
             Result.success()
         } catch (e: Exception) {
             Result.retry()

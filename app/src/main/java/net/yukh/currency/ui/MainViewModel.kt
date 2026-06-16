@@ -44,7 +44,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var refreshError by mutableStateOf<String?>(null)
         private set
-    var summary by mutableStateOf<List<String>>(emptyList())
+    var summary by mutableStateOf<List<Converter.SummaryRow>>(emptyList())
         private set
     var summaryFreshness by mutableStateOf("")
         private set

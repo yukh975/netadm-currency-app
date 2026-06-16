@@ -25,8 +25,10 @@ class CbrSource(private val client: OkHttpClient) : RateSource {
         val json = JSONObject(body)
         val valute = json.getJSONObject("Valute")
         val rates = HashMap<String, Double>()
+        val prev = HashMap<String, Double>()   // предыдущие курсы (для динамики)
         val names = HashMap<String, String>()
         rates["RUB"] = 1.0
+        prev["RUB"] = 1.0
         val keys = valute.keys()
         while (keys.hasNext()) {
             val code = keys.next()
@@ -37,10 +39,13 @@ class CbrSource(private val client: OkHttpClient) : RateSource {
             if (value > 0.0) {
                 rates[code] = value / nominal
                 names[code] = o.optString("Name", code)
+                val previous = o.optDouble("Previous", 0.0)
+                if (previous > 0.0) prev[code] = previous / nominal
             }
         }
         Currencies.register(names)
-        RateTable("RUB", rates, json.optString("Date", ""), System.currentTimeMillis(), id)
+        // Date у ЦБ — дата, НА которую действует курс (обычно следующий день)
+        RateTable("RUB", rates, json.optString("Date", ""), System.currentTimeMillis(), id, prevRates = prev)
     }
 }
 

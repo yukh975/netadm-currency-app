@@ -65,38 +65,58 @@ object Converter {
     private fun format2(v: Double): String =
         String.format(Locale.US, "%,.2f", v).replace(",", " ")
 
-    /** Строка сводки «1 EUR = 90.50 RUB» с одинаковым числом знаков (2).
-     *  Для дешёвых валют при удобном формате масштабируется количество
-     *  («100 RSD = 71.70 RUB»), но число знаков остаётся тем же. */
-    private fun summaryLine(code: String, base: String, perBase: Double, smart: Boolean): String {
-        var factor = 1L
-        if (smart && perBase > 0.0 && perBase < 1.0) {
-            while (perBase * factor < 10.0 && factor < 1_000_000_000L) factor *= 10
-        }
-        return "$factor $code = ${format2(perBase * factor)} $base"
-    }
+    /** Строка сводки для UI/уведомления: текст «🇪🇺 1 EUR = 90.50 RUB» + динамика
+     *  курса (изменение к предыдущему курсу в основной валюте). */
+    data class SummaryRow(
+        val text: String,
+        val delta: String? = null,     // «+0.50» / «−0.07» / «0.00»; null — данных нет
+        val deltaUp: Boolean? = null,  // true=рост (зелёный), false=падение (красный), null=без изм.
+    )
 
-    /** Сводка: курс каждой избранной валюты к основной — по строке на валюту.
-     *  Без заголовка-суммы и обратного курса. Основная валюта пропускается. */
+    /** Сводка: курс каждой избранной валюты к основной — по строке на валюту,
+     *  с динамикой (если у источника есть предыдущие курсы, как у ЦБ РФ).
+     *  Основная валюта пропускается. */
     fun summary(
         table: RateTable,
         base: String,
         favorites: List<String>,
         smart: Boolean,
-    ): List<String> {
-        val out = ArrayList<String>()
+    ): List<SummaryRow> {
+        val out = ArrayList<SummaryRow>()
         for (code in favorites.sorted()) {
             if (code == base) continue
             val flag = Currencies.info(code).flag
             if (code !in table.rates) {
-                out.add("$flag $code: нет данных")
+                out.add(SummaryRow("$flag $code: нет данных"))
                 continue
             }
             val perBase = table.convert(1.0, code, base)
-            out.add("$flag ${summaryLine(code, base, perBase, smart)}")
+            var factor = 1L
+            if (smart && perBase > 0.0 && perBase < 1.0) {
+                while (perBase * factor < 10.0 && factor < 1_000_000_000L) factor *= 10
+            }
+            val text = "$flag $factor $code = ${format2(perBase * factor)} $base"
+            val perBasePrev = table.convertPrev(1.0, code, base)
+            if (perBasePrev == null) {
+                out.add(SummaryRow(text))
+                continue
+            }
+            val d = (perBase - perBasePrev) * factor
+            val ds = format2(abs(d))
+            if (ds == "0.00") {
+                out.add(SummaryRow(text, "0.00", null))
+            } else {
+                val up = d > 0
+                out.add(SummaryRow(text, (if (up) "+" else "−") + ds, up))
+            }
         }
         return out
     }
+
+    /** Дата, НА которую действует курс (для заголовка уведомления): у ЦБ это
+     *  обычно следующий день, у рыночного — сегодня. null, если не распарсилось. */
+    fun courseDate(table: RateTable): String? =
+        parseCourseDate(table.sourceDate, TimeZone.getTimeZone("Europe/Moscow"))
 
     fun lastUpdated(table: RateTable): String {
         val tz = TimeZone.getTimeZone("Europe/Moscow")

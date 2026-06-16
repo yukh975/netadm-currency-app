@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalUriHandler
@@ -215,8 +216,23 @@ private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                     )
-                    vm.summary.forEach { line ->
-                        Text(line, style = MaterialTheme.typography.bodyMedium)
+                    vm.summary.forEach { row ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(row.text, style = MaterialTheme.typography.bodyMedium)
+                            if (row.delta != null) {
+                                Spacer(Modifier.width(6.dp))
+                                val color = when (row.deltaUp) {
+                                    true -> Color(0xFF2E7D32)   // рост — зелёный
+                                    false -> Color(0xFFC62828)  // падение — красный
+                                    null -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                                Text(
+                                    "(${row.delta})",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = color,
+                                )
+                            }
+                        }
                     }
                     if (vm.summaryFreshness.isNotEmpty()) {
                         Text(vm.summaryFreshness, style = MaterialTheme.typography.bodySmall)

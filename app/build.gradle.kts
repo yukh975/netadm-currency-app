@@ -20,7 +20,7 @@ fun signingValue(propKey: String, envKey: String): String? =
 // versionCode — монотонно растущий: номер пайплайна CI (локально 1).
 val ciBuild = System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
 val appVersionCode = ciBuild ?: 1
-val appVersionName = "0.3.6"
+val appVersionName = "0.4.0"
 
 // Имя выходных файлов: currency-converter-<версия>-release.apk / .aab
 base {

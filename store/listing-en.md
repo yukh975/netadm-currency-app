@@ -26,10 +26,11 @@ Features:
 No ads, no sign-up, no personal data collection. All settings stay on your
 device only.
 
-## What's new (release 0.3.6)
-• "My currency" setting — the summary is computed against it.
-• On-demand "Rate summary" button and a configurable notification time.
-• Tapping the notification opens the app with the summary.
+## What's new (release 0.4.0)
+• Rate change in the summary (CBR): the change vs the previous rate next to it
+  — (+0.50) green / (−0.07) red.
+• Summary notification: the title shows the date the rate is effective for.
+• "My currency" setting, "Rate summary" button, configurable notification time.
 • Launch stability and correct layout on Android 15.
 
 ## Privacy policy (URL)
