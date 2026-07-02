@@ -9,7 +9,7 @@ variables:
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
   # Версия приложения — единая с Telegram-ботом (ручной SemVer, см. CHANGELOG.md).
   # Поднимать вручную при выпуске новой версии.
-  APP_VERSION: "0.5.0"
+  APP_VERSION: "0.5.1"
 
 # Все джобы по умолчанию — на Docker-раннере: этот инстанс не берёт джобы без
 # тега `docker`. Джобы под другой раннер (например FreeBSD) переопределяют `tags`.

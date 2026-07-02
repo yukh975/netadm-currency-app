@@ -482,7 +482,7 @@ private fun UpdateSection() {
                         status = "У вас последняя версия (${BuildConfig.VERSION_NAME})"
                     } else {
                         update = u
-                        status = "Доступна версия ${u.versionName}"
+                        status = "Доступна версия ${u.versionName} (у вас ${BuildConfig.VERSION_NAME})"
                     }
                 } catch (e: Exception) {
                     status = "Не удалось проверить: ${e.message ?: "ошибка сети"}"
