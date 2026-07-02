@@ -44,9 +44,56 @@ object UpdateChecker {
                     }
                 }
                 if (apk.isBlank()) return@withContext null
-                Update(remote, apk, rel.optString("description").trim())
+                // Список изменений: сначала пробуем реальный раздел из CHANGELOG.md
+                // (публичный raw), иначе — описание релиза.
+                val notes = fetchChangelog(client, remote)
+                    ?: rel.optString("description").trim()
+                Update(remote, apk, notes)
             }
         }
+
+    /** Достать раздел CHANGELOG.md для версии [version] и слегка очистить markdown. */
+    private fun fetchChangelog(client: OkHttpClient, version: String): String? {
+        if (BuildConfig.UPDATE_CHANGELOG_URL.isBlank()) return null
+        return try {
+            val req = Request.Builder().url(BuildConfig.UPDATE_CHANGELOG_URL).build()
+            client.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) return null
+                val md = resp.body?.string() ?: return null
+                extractSection(md, version)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /** Вернуть текст раздела «## [version] …» до следующего «## », с лёгкой
+     *  очисткой markdown (для показа в диалоге). null, если раздела нет. */
+    private fun extractSection(md: String, version: String): String? {
+        val lines = md.lines()
+        val start = lines.indexOfFirst { it.trimStart().startsWith("## [$version]") }
+        if (start < 0) return null
+        val body = StringBuilder()
+        for (i in (start + 1) until lines.size) {
+            val raw = lines[i]
+            if (raw.trimStart().startsWith("## ")) break
+            body.append(raw).append('\n')
+        }
+        val cleaned = body.toString()
+            .replace("**", "")
+            .replace("`", "")
+            .lines()
+            .joinToString("\n") { line ->
+                val t = line.trim()
+                when {
+                    t.startsWith("### ") -> t.removePrefix("### ")
+                    t.startsWith("- ") -> "• " + t.removePrefix("- ")
+                    else -> line.trimEnd()
+                }
+            }
+            .trim()
+        return cleaned.ifBlank { null }
+    }
 
     /** Сравнить версии вида «1.2.3» покомпонентно: >0 если a новее b, 0 равны, <0 старее. */
     fun compareSemVer(a: String, b: String): Int {

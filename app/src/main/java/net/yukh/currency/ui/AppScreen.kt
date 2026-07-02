@@ -461,16 +461,22 @@ private fun AboutScreen() {
     }
 }
 
+/** Исходы проверки обновления (показываются модалкой). */
+private sealed interface UpdateDialog {
+    data class Available(val update: UpdateChecker.Update) : UpdateDialog
+    data class Info(val message: String) : UpdateDialog
+}
+
 /** Блок «Обновление» на вкладке «О программе» (только для flavor `direct`).
- *  При наличии новой версии открывается модалка со списком изменений и кнопкой
- *  «Установить» (отдельной кнопки на экране нет). */
+ *  Результат проверки ВСЕГДА показывается модалкой: доступно обновление
+ *  (со списком изменений и кнопкой «Установить») либо «последняя версия»/ошибка. */
 @Composable
 private fun UpdateSection() {
     val context = LocalContext.current
     val app = context.applicationContext as CurrencyApp
     val scope = rememberCoroutineScope()
-    var status by remember { mutableStateOf<String?>(null) }
-    var update by remember { mutableStateOf<UpdateChecker.Update?>(null) }
+    var status by remember { mutableStateOf<String?>(null) }   // прогресс скачивания/установки
+    var dialog by remember { mutableStateOf<UpdateDialog?>(null) }
     var busy by remember { mutableStateOf(false) }
 
     fun startInstall(u: UpdateChecker.Update) {
@@ -503,19 +509,21 @@ private fun UpdateSection() {
             busy = true
             status = "Проверяю…"
             scope.launch {
-                try {
+                val result = try {
                     val u = UpdateChecker.check(app.httpClient, BuildConfig.VERSION_NAME)
-                    if (u == null) {
-                        status = "У вас последняя версия (${BuildConfig.VERSION_NAME})"
+                    if (u != null) {
+                        UpdateDialog.Available(u)
                     } else {
-                        status = null
-                        update = u // непустое значение открывает модалку ниже
+                        UpdateDialog.Info(
+                            "У вас установлена последняя версия (${BuildConfig.VERSION_NAME}).",
+                        )
                     }
                 } catch (e: Exception) {
-                    status = "Не удалось проверить: ${e.message ?: "ошибка сети"}"
-                } finally {
-                    busy = false
+                    UpdateDialog.Info("Не удалось проверить обновление: ${e.message ?: "ошибка сети"}")
                 }
+                status = null
+                dialog = result
+                busy = false
             }
         },
     ) {
@@ -524,37 +532,48 @@ private fun UpdateSection() {
 
     status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 
-    val u = update
-    if (u != null) {
-        AlertDialog(
-            onDismissRequest = { update = null },
-            title = { Text("Доступна версия ${u.versionName}") },
-            text = {
-                Column(
-                    Modifier
-                        .heightIn(max = 320.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        "Установлена: ${BuildConfig.VERSION_NAME}",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    Text(
-                        u.notes.ifBlank { "Список изменений недоступен." },
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-            },
+    when (val d = dialog) {
+        is UpdateDialog.Available -> {
+            val u = d.update
+            AlertDialog(
+                onDismissRequest = { dialog = null },
+                title = { Text("Доступна версия ${u.versionName}") },
+                text = {
+                    Column(
+                        Modifier
+                            .heightIn(max = 320.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            "Установлена: ${BuildConfig.VERSION_NAME}",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Text(
+                            u.notes.ifBlank { "Список изменений недоступен." },
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        dialog = null
+                        startInstall(u)
+                    }) { Text("Установить") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { dialog = null }) { Text("Позже") }
+                },
+            )
+        }
+        is UpdateDialog.Info -> AlertDialog(
+            onDismissRequest = { dialog = null },
+            title = { Text("Обновление") },
+            text = { Text(d.message) },
             confirmButton = {
-                TextButton(onClick = {
-                    update = null
-                    startInstall(u)
-                }) { Text("Установить") }
-            },
-            dismissButton = {
-                TextButton(onClick = { update = null }) { Text("Позже") }
+                TextButton(onClick = { dialog = null }) { Text("OK") }
             },
         )
+        null -> {}
     }
 }

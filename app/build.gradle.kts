@@ -20,7 +20,7 @@ fun signingValue(propKey: String, envKey: String): String? =
 // versionCode — монотонно растущий: номер пайплайна CI (локально 1).
 val ciBuild = System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
 val appVersionCode = ciBuild ?: 1
-val appVersionName = "0.5.3"
+val appVersionName = "0.5.4"
 
 // Имя выходных файлов: currency-converter-<версия>-release.apk / .aab
 base {
@@ -65,11 +65,17 @@ android {
                 "String", "UPDATE_RELEASES_URL",
                 "\"https://git.home.yukh.net/api/v4/projects/6/releases?per_page=1\"",
             )
+            // raw CHANGELOG (публичный) — для показа реальных изменений в модалке
+            buildConfigField(
+                "String", "UPDATE_CHANGELOG_URL",
+                "\"https://git.home.yukh.net/yukh/netadm-currency-bot/-/raw/android/CHANGELOG.md\"",
+            )
         }
         create("play") {
             dimension = "distribution"
             buildConfigField("boolean", "UPDATE_ENABLED", "false")
             buildConfigField("String", "UPDATE_RELEASES_URL", "\"\"")
+            buildConfigField("String", "UPDATE_CHANGELOG_URL", "\"\"")
         }
     }
 
