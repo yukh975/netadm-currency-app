@@ -1,6 +1,6 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <!-- Иконка магазина 512x512. Полная заливка (без прозрачности) — подходит и
-       для Google Play, и для RuStore. Мотив: ₽ ⇄ $ на зелёном градиенте. -->
+       для Google Play, и для RuStore. Мотив B: крупные ₽ и $ + стрелка обмена. -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#43A047"/>
@@ -8,12 +8,12 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" fill="url(#bg)"/>
-  <text x="150" y="260" font-family="Arial, Helvetica, sans-serif" font-size="210"
-        font-weight="700" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">₽</text>
-  <text x="362" y="260" font-family="Arial, Helvetica, sans-serif" font-size="210"
-        font-weight="700" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">$</text>
-  <g stroke="#FFFFFF" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M214 226 H300 M284 210 L300 226 L284 242"/>
-    <path d="M298 294 H212 M228 278 L212 294 L228 310"/>
+  <g fill="#FFFFFF" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle">
+    <text x="176" y="200" font-size="260" dominant-baseline="central">&#8381;</text>
+    <text x="336" y="200" font-size="260" dominant-baseline="central">$</text>
+  </g>
+  <g stroke="#FFFFFF" stroke-width="24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M186 358 H326 M306 340 L326 358 L306 376"/>
+    <path d="M326 404 H186 M206 386 L186 404 L206 422"/>
   </g>
 </svg>
