@@ -9,7 +9,7 @@ variables:
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
   # Версия приложения — единая с Telegram-ботом (ручной SemVer, см. CHANGELOG.md).
   # Поднимать вручную при выпуске новой версии.
-  APP_VERSION: "0.4.0"
+  APP_VERSION: "0.4.1"
 
 # Когда создавать пайплайн.
 workflow:

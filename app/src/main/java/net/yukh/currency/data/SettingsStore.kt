@@ -67,4 +67,12 @@ class SettingsStore(private val context: Context) {
 
     suspend fun saveCache(source: String, json: String) =
         context.dataStore.edit { it[stringPreferencesKey("cache_$source")] = json }
+
+    /** Метка курса, о котором в последний раз слали уведомление (по источнику).
+     *  Храним sourceDate: уведомляем только когда курс реально сменился. */
+    suspend fun lastNotified(source: String): String =
+        context.dataStore.data.first()[stringPreferencesKey("last_notified_$source")] ?: ""
+
+    suspend fun setLastNotified(source: String, marker: String) =
+        context.dataStore.edit { it[stringPreferencesKey("last_notified_$source")] = marker }
 }

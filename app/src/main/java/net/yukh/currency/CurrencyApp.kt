@@ -16,10 +16,13 @@ class CurrencyApp : Application() {
         private set
     lateinit var repository: RatesRepository
         private set
+    lateinit var httpClient: OkHttpClient
+        private set
 
     override fun onCreate() {
         super.onCreate()
         val client = OkHttpClient()
+        httpClient = client
         settingsStore = SettingsStore(this)
         repository = RatesRepository(settingsStore, client)
         DailyUpdateWorker.createChannel(this)
