@@ -44,10 +44,10 @@ object UpdateChecker {
                     }
                 }
                 if (apk.isBlank()) return@withContext null
-                // Список изменений: сначала пробуем реальный раздел из CHANGELOG.md
-                // (публичный raw), иначе — описание релиза.
-                val notes = fetchChangelog(client, remote)
-                    ?: rel.optString("description").trim()
+                // Список изменений берём ТОЛЬКО из CHANGELOG.md (публичный raw).
+                // Описание релиза не используем — там служебный текст. Если раздел
+                // не найден, оставляем пусто (в UI покажется «недоступен»).
+                val notes = fetchChangelog(client, remote) ?: ""
                 Update(remote, apk, notes)
             }
         }
