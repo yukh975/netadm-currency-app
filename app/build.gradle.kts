@@ -20,7 +20,7 @@ fun signingValue(propKey: String, envKey: String): String? =
 // versionCode — монотонно растущий: номер пайплайна CI (локально 1).
 val ciBuild = System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
 val appVersionCode = ciBuild ?: 1
-val appVersionName = "0.4.1"
+val appVersionName = "0.5.0"
 
 // Имя выходных файлов: currency-converter-<версия>-release.apk / .aab
 base {
@@ -48,6 +48,28 @@ android {
                 keyAlias = signingValue("keyAlias", "KEY_ALIAS")
                 keyPassword = signingValue("keyPassword", "KEY_PASSWORD")
             }
+        }
+    }
+
+    // Две линии дистрибуции:
+    //  • direct — sideload/GitLab: встроенный апдейтер тянет APK из публичного
+    //    релиза GitLab (нужно REQUEST_INSTALL_PACKAGES, см. src/direct/…);
+    //  • play — Google Play: обновляет сам магазин, апдейтер и разрешение НЕ нужны
+    //    (важно для проверки Play — минимум разрешений).
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("direct") {
+            dimension = "distribution"
+            buildConfigField("boolean", "UPDATE_ENABLED", "true")
+            buildConfigField(
+                "String", "UPDATE_RELEASES_URL",
+                "\"https://git.home.yukh.net/api/v4/projects/6/releases?per_page=1\"",
+            )
+        }
+        create("play") {
+            dimension = "distribution"
+            buildConfigField("boolean", "UPDATE_ENABLED", "false")
+            buildConfigField("String", "UPDATE_RELEASES_URL", "\"\"")
         }
     }
 

@@ -40,6 +40,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -55,9 +57,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import net.yukh.currency.BuildConfig
+import net.yukh.currency.CurrencyApp
+import net.yukh.currency.data.ApkInstaller
 import net.yukh.currency.data.AppSettings
 import net.yukh.currency.data.Currencies
+import net.yukh.currency.data.UpdateChecker
 
 @Composable
 fun AppScreen(
@@ -439,9 +445,92 @@ private fun AboutScreen() {
             style = MaterialTheme.typography.bodySmall,
         )
 
+        if (BuildConfig.UPDATE_ENABLED) {
+            HorizontalDivider()
+            UpdateSection()
+        }
+
         HorizontalDivider()
 
         Text("© 2026 Yuriy Khachaturian", style = MaterialTheme.typography.bodySmall)
         Text("Лицензия MIT", style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/** Блок «Обновление» на вкладке «О программе» (только для flavor `direct`). */
+@Composable
+private fun UpdateSection() {
+    val context = LocalContext.current
+    val app = context.applicationContext as CurrencyApp
+    val scope = rememberCoroutineScope()
+    var status by remember { mutableStateOf<String?>(null) }
+    var update by remember { mutableStateOf<UpdateChecker.Update?>(null) }
+    var busy by remember { mutableStateOf(false) }
+
+    Text("Обновление", style = MaterialTheme.typography.titleSmall)
+
+    Button(
+        enabled = !busy,
+        onClick = {
+            busy = true
+            status = "Проверяю…"
+            update = null
+            scope.launch {
+                try {
+                    val u = UpdateChecker.check(app.httpClient, BuildConfig.VERSION_NAME)
+                    if (u == null) {
+                        status = "У вас последняя версия (${BuildConfig.VERSION_NAME})"
+                    } else {
+                        update = u
+                        status = "Доступна версия ${u.versionName}"
+                    }
+                } catch (e: Exception) {
+                    status = "Не удалось проверить: ${e.message ?: "ошибка сети"}"
+                } finally {
+                    busy = false
+                }
+            }
+        },
+    ) {
+        Text("Проверить обновление")
+    }
+
+    status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+
+    update?.let { u ->
+        if (u.notes.isNotBlank()) {
+            Text(u.notes, style = MaterialTheme.typography.bodySmall)
+        }
+        Button(
+            enabled = !busy,
+            onClick = {
+                if (!ApkInstaller.canInstall(context)) {
+                    // сначала попросим разрешение ставить APK из этого источника
+                    ApkInstaller.requestInstallPermission(context)
+                } else {
+                    busy = true
+                    status = "Скачиваю…"
+                    scope.launch {
+                        try {
+                            val file = ApkInstaller.download(context, app.httpClient, u.apkUrl)
+                            status = "Запускаю установку…"
+                            ApkInstaller.install(context, file)
+                        } catch (e: Exception) {
+                            status = "Ошибка загрузки: ${e.message ?: "неизвестно"}"
+                        } finally {
+                            busy = false
+                        }
+                    }
+                }
+            },
+        ) {
+            Text("Скачать и установить ${u.versionName}")
+        }
+        if (!ApkInstaller.canInstall(context)) {
+            Text(
+                "Потребуется разрешить установку приложений из этого источника.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
     }
 }

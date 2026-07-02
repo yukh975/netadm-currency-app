@@ -38,24 +38,41 @@
 - **Динамика курса** в сводке (оба источника): рядом с курсом изменение
   к предыдущему — `(+0.50)` зелёным / `(−0.07)` красным.
 - Вкладка «О программе»: версия, ссылки на yukh.net и Telegram-бот.
+- **Обновление в приложении** (sideload-сборка `direct`): кнопка «Проверить
+  обновление» на вкладке «О программе» читает последний релиз из публичного
+  GitLab, и если версия новее — качает APK и запускает установку. В сборке для
+  Google Play (`play`) этого нет: магазин обновляет сам (см. «Линии сборки»).
 
 ## Стек
 
 - Kotlin, Jetpack Compose (Material 3)
 - OkHttp + org.json (сеть), DataStore Preferences (настройки/кэш)
 - WorkManager (фоновое обновление и уведомления)
-- minSdk 24, compileSdk/targetSdk 34, JDK 17
+- minSdk 24, compileSdk/targetSdk 35, JDK 17
 
 ## Сборка
 
 ### В GitLab CI (Docker-раннер)
 
 `.gitlab-ci.yml` ставит Android SDK через cmdline-tools и собирает в раннере
-только релиз:
-- `assembleRelease` — подписанные APK + AAB (при заданном `KEYSTORE_BASE64`).
+только релиз (все джобы идут на раннер с тегом `docker`):
+- `assembleDirectRelease` — подписанный **APK** линии `direct` (sideload/GitLab,
+  со встроенным апдейтером) — его же заливаем в Package Registry и Release;
+- `bundlePlayRelease` — подписанный **AAB** линии `play` для Google Play.
 
 Отладочный APK в CI не собирается (экономия ресурсов раннеров) — для локальной
-отладки используйте `./gradlew assembleDebug` (см. ниже).
+отладки используйте `./gradlew assembleDirectDebug` (см. ниже).
+
+### Линии сборки (flavor'ы)
+
+- **`direct`** — для загрузки напрямую / из GitLab-релиза. Содержит апдейтер
+  (кнопка «Проверить обновление») и разрешение `REQUEST_INSTALL_PACKAGES`.
+  Апдейтер тянет последний релиз из публичного GitLab и ставит APK.
+- **`play`** — для Google Play. Без апдейтера и без `REQUEST_INSTALL_PACKAGES`
+  (обновляет сам магазин; карточка остаётся с минимумом разрешений).
+
+Обе линии используют один и тот же `applicationId` и ключ подписи, поэтому
+обновление одной поверх другой ставится штатно.
 
 **Версия:** `versionName` задаётся вручную (SemVer) и держится единым с
 Telegram-ботом — переменная `APP_VERSION` в [`.gitlab-ci.yml`](.gitlab-ci.yml) и
@@ -76,8 +93,8 @@ APK/AAB в Package Registry и создаёт **GitLab Release** с тегом `
 Нужен JDK 17 и переменная `ANDROID_HOME` на установленный Android SDK:
 
 ```bash
-./gradlew assembleDebug
-# APK: app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleDirectDebug
+# APK: app/build/outputs/apk/direct/debug/*.apk
 ```
 
 ## Подпись релиза
