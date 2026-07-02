@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
@@ -327,7 +329,9 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
         Text(
             "Постоянная домашняя валюта. Относительно неё считается сводка в " +
                 "уведомлениях; в конверторе она подставляется как исходная по умолчанию " +
-                "(там её можно временно переключить).",
+                "(там её можно временно переключить).\n\nВыбор ниже — из валют вашего " +
+                "избранного (вкладка ⭐ Избранное). Чтобы валюта появилась здесь, " +
+                "добавьте её в избранное.",
             style = MaterialTheme.typography.bodySmall,
         )
         Row(
@@ -457,7 +461,9 @@ private fun AboutScreen() {
     }
 }
 
-/** Блок «Обновление» на вкладке «О программе» (только для flavor `direct`). */
+/** Блок «Обновление» на вкладке «О программе» (только для flavor `direct`).
+ *  При наличии новой версии открывается модалка со списком изменений и кнопкой
+ *  «Установить» (отдельной кнопки на экране нет). */
 @Composable
 private fun UpdateSection() {
     val context = LocalContext.current
@@ -467,6 +473,28 @@ private fun UpdateSection() {
     var update by remember { mutableStateOf<UpdateChecker.Update?>(null) }
     var busy by remember { mutableStateOf(false) }
 
+    fun startInstall(u: UpdateChecker.Update) {
+        if (!ApkInstaller.canInstall(context)) {
+            // сначала попросим разрешение ставить APK из этого источника
+            ApkInstaller.requestInstallPermission(context)
+            status = "Разрешите установку из этого источника и повторите."
+            return
+        }
+        busy = true
+        status = "Скачиваю…"
+        scope.launch {
+            try {
+                val file = ApkInstaller.download(context, app.httpClient, u.apkUrl)
+                status = "Запускаю установку…"
+                ApkInstaller.install(context, file)
+            } catch (e: Exception) {
+                status = "Ошибка загрузки: ${e.message ?: "неизвестно"}"
+            } finally {
+                busy = false
+            }
+        }
+    }
+
     Text("Обновление", style = MaterialTheme.typography.titleSmall)
 
     Button(
@@ -474,15 +502,14 @@ private fun UpdateSection() {
         onClick = {
             busy = true
             status = "Проверяю…"
-            update = null
             scope.launch {
                 try {
                     val u = UpdateChecker.check(app.httpClient, BuildConfig.VERSION_NAME)
                     if (u == null) {
                         status = "У вас последняя версия (${BuildConfig.VERSION_NAME})"
                     } else {
-                        update = u
-                        status = "Доступна версия ${u.versionName} (у вас ${BuildConfig.VERSION_NAME})"
+                        status = null
+                        update = u // непустое значение открывает модалку ниже
                     }
                 } catch (e: Exception) {
                     status = "Не удалось проверить: ${e.message ?: "ошибка сети"}"
@@ -497,40 +524,37 @@ private fun UpdateSection() {
 
     status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 
-    update?.let { u ->
-        if (u.notes.isNotBlank()) {
-            Text(u.notes, style = MaterialTheme.typography.bodySmall)
-        }
-        Button(
-            enabled = !busy,
-            onClick = {
-                if (!ApkInstaller.canInstall(context)) {
-                    // сначала попросим разрешение ставить APK из этого источника
-                    ApkInstaller.requestInstallPermission(context)
-                } else {
-                    busy = true
-                    status = "Скачиваю…"
-                    scope.launch {
-                        try {
-                            val file = ApkInstaller.download(context, app.httpClient, u.apkUrl)
-                            status = "Запускаю установку…"
-                            ApkInstaller.install(context, file)
-                        } catch (e: Exception) {
-                            status = "Ошибка загрузки: ${e.message ?: "неизвестно"}"
-                        } finally {
-                            busy = false
-                        }
-                    }
+    val u = update
+    if (u != null) {
+        AlertDialog(
+            onDismissRequest = { update = null },
+            title = { Text("Доступна версия ${u.versionName}") },
+            text = {
+                Column(
+                    Modifier
+                        .heightIn(max = 320.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        "Установлена: ${BuildConfig.VERSION_NAME}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Text(
+                        u.notes.ifBlank { "Список изменений недоступен." },
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                 }
             },
-        ) {
-            Text("Скачать и установить ${u.versionName}")
-        }
-        if (!ApkInstaller.canInstall(context)) {
-            Text(
-                "Потребуется разрешить установку приложений из этого источника.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
+            confirmButton = {
+                TextButton(onClick = {
+                    update = null
+                    startInstall(u)
+                }) { Text("Установить") }
+            },
+            dismissButton = {
+                TextButton(onClick = { update = null }) { Text("Позже") }
+            },
+        )
     }
 }
