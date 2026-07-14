@@ -411,7 +411,7 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
     }
 }
 
-private const val SITE_URL = "https://yukh.net"
+private const val SITE_URL = "https://netadm.pro"
 private const val BOT_URL = "https://t.me/netadm_currency_bot"
 
 @Composable
@@ -438,7 +438,7 @@ private fun AboutScreen() {
         HorizontalDivider()
 
         TextButton(onClick = { uri.openUri(SITE_URL) }) {
-            Text("🌐 Сайт разработчика — yukh.net")
+            Text("🌐 Сайт разработчика — netadm.pro")
         }
         TextButton(onClick = { uri.openUri(BOT_URL) }) {
             Text("✈️ Telegram-бот с тем же функционалом")

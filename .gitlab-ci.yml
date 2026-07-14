@@ -8,8 +8,9 @@ variables:
   ANDROID_CMDLINE_TOOLS: "11076708"
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
   # Версия приложения — единая с Telegram-ботом (ручной SemVer, см. CHANGELOG.md).
-  # Поднимать вручную при выпуске новой версии.
-  APP_VERSION: "0.5.5"
+  # Поднимать вручную при выпуске новой версии — СИНХРОННО с appVersionName и
+  # appVersionCode в app/build.gradle.kts (там литералы — требование F-Droid).
+  APP_VERSION: "0.5.6"
 
 # Все джобы по умолчанию — на Docker-раннере: этот инстанс не берёт джобы без
 # тега `docker`. Джобы под другой раннер (например FreeBSD) переопределяют `tags`.
@@ -79,14 +80,17 @@ assembleRelease:
     - echo "$KEYSTORE_BASE64" | base64 -d > "$CI_PROJECT_DIR/release.keystore"
     - export KEYSTORE_FILE="$CI_PROJECT_DIR/release.keystore"
     # direct — APK для sideload/GitLab (со встроенным апдейтером);
-    # play — AAB для Google Play (без апдейтера и лишних разрешений).
-    - ./gradlew --no-daemon assembleDirectRelease bundlePlayRelease
+    # play — AAB для Google Play (без апдейтера и лишних разрешений);
+    # fdroid — APK для каталога F-Droid (без апдейтера; кладём в релиз как
+    # fdroid.apk — F-Droid байт-сравнивает свою сборку с этим файлом).
+    - ./gradlew --no-daemon assembleDirectRelease bundlePlayRelease assembleFdroidRelease
     - rm -f "$CI_PROJECT_DIR/release.keystore"
   artifacts:
     name: "currency-converter-release-$CI_COMMIT_SHORT_SHA"
     paths:
       - app/build/outputs/apk/direct/release/*.apk
       - app/build/outputs/bundle/playRelease/*.aab
+      - app/build/outputs/apk/fdroid/release/*.apk
     expire_in: 1 month
 
 # ---- Релиз в GitLab: APK/AAB в Package Registry + запись в Releases ----
@@ -109,8 +113,11 @@ upload-packages:
     - apk add --no-cache curl
     - APK=$(ls app/build/outputs/apk/direct/release/*.apk | head -1)
     - AAB=$(ls app/build/outputs/bundle/playRelease/*.aab | head -1)
+    - FDROID_APK=$(ls app/build/outputs/apk/fdroid/release/*.apk | head -1)
     - 'curl --fail --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$APK" "$PKG_BASE/currency-converter-$VERSION.apk"'
     - 'curl --fail --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$AAB" "$PKG_BASE/currency-converter-$VERSION.aab"'
+    # Короткое имя fdroid.apk — строка Binaries в метаданных F-Droid ограничена ~90 символами.
+    - 'curl --fail --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$FDROID_APK" "$PKG_BASE/fdroid.apk"'
 
 # Создаём GitLab Release с тегом и ссылками на артефакты в Package Registry.
 create-release:
@@ -138,6 +145,9 @@ create-release:
           link_type: "package"
         - name: "AAB (app-release)"
           url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/currency-converter/$APP_VERSION/currency-converter-$APP_VERSION.aab"
+          link_type: "package"
+        - name: "fdroid.apk (сборка для F-Droid)"
+          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/currency-converter/$APP_VERSION/fdroid.apk"
           link_type: "package"
 
 # ---- Публикация (ручной запуск, активна при наличии креденшелов) ----

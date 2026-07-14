@@ -1,0 +1,14 @@
+💱 A simple, fast currency converter using rates from the Central Bank of Russia (CBR) or market (mid-market) rates.
+
+Features:
+• Two rate sources — 🇷🇺 CBR and 🌐 market (mid-market) rate.
+• All CBR currencies, including less common ones.
+• "My currency" — a persistent home currency the summary is computed against.
+• Favorites: search by code, name, or country.
+• Convert from your currency or any other: the source currency can be switched temporarily without changing settings.
+• Friendly format for cheap currencies: "100 RSD = 73 RUB" instead of fractions.
+• Rates are cached and work offline between updates.
+• Daily summary notification with your favorite rates (time is configurable, 17:00 Moscow time by default); tapping it opens the summary. Rate changes are shown next to each rate.
+• Rate date and last refresh time always visible.
+
+No ads, no sign-up, no personal data collection. All settings stay on your device only.

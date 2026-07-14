@@ -2,8 +2,21 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 `versionName` задаётся вручную (SemVer) и держится единым с Telegram-ботом;
-`versionCode` растёт автоматически (номер пайплайна CI). Каждая сборка ветки
-`android` публикуется как GitLab Release (раздел Releases).
+`versionCode` — литерал по схеме `major*1_000_000 + minor*10_000 + patch*100`
+(требование F-Droid: сканер читает literal из `app/build.gradle.kts`). Оба
+значения бампятся вручную перед релизом, синхронно с `APP_VERSION` в
+`.gitlab-ci.yml`. Каждая сборка ветки `android` публикуется как GitLab Release.
+
+## [0.5.6] — 2026-07-14
+
+### Changed
+- Подготовка к публикации в F-Droid: `versionCode` теперь литеральный (50600 по схеме `minor*10_000 + patch*100`), а не из номера пайплайна CI — сканер F-Droid читает значения прямо из `build.gradle.kts`.
+- Воспроизводимая сборка: убраны git-hash textproto (`vcsInfo`) и Play-блок «dependency metadata» (`dependenciesInfo`) — без этого байт-сравнение F-Droid не сходится.
+- Ссылка на сайт разработчика: `yukh.net` → `netadm.pro` (вкладка «О программе»).
+
+### Added
+- Флейвор **`fdroid`** — как `play` (без апдейтера и `REQUEST_INSTALL_PACKAGES`), собирается в CI и публикуется в релизе как `fdroid.apk` (файл для байт-сравнения F-Droid).
+- Метаданные каталога в `fastlane/metadata/android/{en-US,ru-RU}/` (название, описания, changelog по versionCode, иконка 512×512).
 
 ## [0.5.5] — 2026-07-02
 

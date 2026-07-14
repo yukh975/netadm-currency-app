@@ -1,0 +1,1 @@
+First F-Droid-ready release: reproducible build, literal version, fdroid build flavor, developer site is now netadm.pro.

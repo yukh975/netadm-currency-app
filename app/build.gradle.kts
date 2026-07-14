@@ -17,10 +17,12 @@ fun signingValue(propKey: String, envKey: String): String? =
     keystoreProps.getProperty(propKey) ?: System.getenv(envKey)
 
 // versionName держим единым с Telegram-ботом (ручной SemVer, см. CHANGELOG.md).
-// versionCode — монотонно растущий: номер пайплайна CI (локально 1).
-val ciBuild = System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
-val appVersionCode = ciBuild ?: 1
-val appVersionName = "0.5.5"
+// ОБА значения — литералы: F-Droid собирает shallow-клоном без CI-переменных и
+// читает их сканером прямо из defaultConfig. Схема versionCode:
+//   major*1_000_000 + minor*10_000 + patch*100   (0.5.6 → 50600)
+// Бампить оба вручную перед релизом (вместе с APP_VERSION в .gitlab-ci.yml).
+val appVersionCode = 50600
+val appVersionName = "0.5.6"
 
 // Имя выходных файлов: currency-converter-<версия>-release.apk / .aab
 base {
@@ -77,6 +79,23 @@ android {
             buildConfigField("String", "UPDATE_RELEASES_URL", "\"\"")
             buildConfigField("String", "UPDATE_CHANGELOG_URL", "\"\"")
         }
+        // fdroid — сборка для каталога F-Droid: как play (обновляет каталог,
+        // апдейтер и REQUEST_INSTALL_PACKAGES запрещены политикой F-Droid).
+        // Отдельный флейвор, чтобы play мог когда-нибудь разойтись (billing и т.п.),
+        // а метаданные F-Droid (gradle: [fdroid]) остались стабильными.
+        create("fdroid") {
+            dimension = "distribution"
+            buildConfigField("boolean", "UPDATE_ENABLED", "false")
+            buildConfigField("String", "UPDATE_RELEASES_URL", "\"\"")
+            buildConfigField("String", "UPDATE_CHANGELOG_URL", "\"\"")
+        }
+    }
+
+    // Воспроизводимая сборка для F-Droid: не встраивать Play-блок «dependency
+    // metadata» в подпись APK/AAB (F-Droid'овский `check apk` его отвергает).
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
 
     buildTypes {
@@ -91,6 +110,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // Воспроизводимая сборка для F-Droid: без git-hash textproto в APK
+            // (иначе байт-матч ломается на каждом чекауте).
+            vcsInfo {
+                include = false
+            }
             // Подписываем release только если keystore сконфигурирован.
             if (signingValue("storeFile", "KEYSTORE_FILE") != null) {
                 signingConfig = signingConfigs.getByName("release")
