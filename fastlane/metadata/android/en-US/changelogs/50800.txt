@@ -1,0 +1,1 @@
+First F-Droid-ready release: reproducible build, fdroid flavor, no ads/tracking.

@@ -16,19 +16,6 @@ val keystoreProps = Properties().apply {
 fun signingValue(propKey: String, envKey: String): String? =
     keystoreProps.getProperty(propKey) ?: System.getenv(envKey)
 
-// versionName держим единым с Telegram-ботом (ручной SemVer, см. CHANGELOG.md).
-// ОБА значения — литералы: F-Droid собирает shallow-клоном без CI-переменных и
-// читает их сканером прямо из defaultConfig. Схема versionCode:
-//   major*1_000_000 + minor*10_000 + patch*100   (0.5.6 → 50600)
-// Бампить оба вручную перед релизом (вместе с APP_VERSION в .gitlab-ci.yml).
-val appVersionCode = 50700
-val appVersionName = "0.5.7"
-
-// Имя выходных файлов: currency-converter-<версия>-release.apk / .aab
-base {
-    archivesName.set("currency-converter-$appVersionName")
-}
-
 android {
     namespace = "net.yukh.currency"
     compileSdk = 35
@@ -37,8 +24,14 @@ android {
         applicationId = "net.yukh.currency"
         minSdk = 24
         targetSdk = 35
-        versionCode = appVersionCode
-        versionName = appVersionName
+        // ВАЖНО: только литералы (не переменные!) — сканер F-Droid (checkupdates)
+        // читает эти строки регэкспом; значение через val он не видит (проверено:
+        // job checkupdates падал с «Couldn't find any version information»).
+        // versionName — ручной SemVer, единый с Telegram-ботом. Схема versionCode:
+        //   major*1_000_000 + minor*10_000 + patch*100   (0.5.8 → 50800)
+        // Бампить оба синхронно с APP_VERSION в .gitlab-ci.yml.
+        versionCode = 50800
+        versionName = "0.5.8"
     }
 
     signingConfigs {
@@ -141,6 +134,12 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+// Имя выходных файлов: currency-converter-<версия>-release.apk / .aab.
+// После блока android — версия берётся из литерала в defaultConfig.
+base {
+    archivesName.set("currency-converter-${android.defaultConfig.versionName}")
 }
 
 dependencies {

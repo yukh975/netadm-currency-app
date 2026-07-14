@@ -7,6 +7,11 @@
 значения бампятся вручную перед релизом, синхронно с `APP_VERSION` в
 `.gitlab-ci.yml`. Каждая сборка ветки `android` публикуется как GitLab Release.
 
+## [0.5.8] — 2026-07-14
+
+### Fixed
+- Версия приложения (`versionCode`/`versionName`) записана литералами прямо в `defaultConfig` — сканер версий F-Droid (`checkupdates`) не понимает значения через переменные Gradle (job падал с «Couldn't find any version information»; сама сборка `fdroid build` при этом проходила).
+
 ## [0.5.7] — 2026-07-14
 
 ### Added
