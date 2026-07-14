@@ -7,6 +7,11 @@
 значения бампятся вручную перед релизом, синхронно с `APP_VERSION` в
 `.gitlab-ci.yml`. Каждая сборка ветки `android` публикуется как GitLab Release.
 
+## [0.5.7] — 2026-07-14
+
+### Added
+- Автопубликация релизов на публичном GitHub-зеркале ([github.com/yukh975/netadm-currency-app](https://github.com/yukh975/netadm-currency-app)): CI пушит ветку `android`, тег версии и GitHub-релиз с APK и `fdroid.apk` — это источник для каталога F-Droid.
+
 ## [0.5.6] — 2026-07-14
 
 ### Changed

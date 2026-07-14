@@ -21,8 +21,8 @@ fun signingValue(propKey: String, envKey: String): String? =
 // читает их сканером прямо из defaultConfig. Схема versionCode:
 //   major*1_000_000 + minor*10_000 + patch*100   (0.5.6 → 50600)
 // Бампить оба вручную перед релизом (вместе с APP_VERSION в .gitlab-ci.yml).
-val appVersionCode = 50600
-val appVersionName = "0.5.6"
+val appVersionCode = 50700
+val appVersionName = "0.5.7"
 
 // Имя выходных файлов: currency-converter-<версия>-release.apk / .aab
 base {

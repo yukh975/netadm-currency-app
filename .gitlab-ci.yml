@@ -10,7 +10,7 @@ variables:
   # Версия приложения — единая с Telegram-ботом (ручной SemVer, см. CHANGELOG.md).
   # Поднимать вручную при выпуске новой версии — СИНХРОННО с appVersionName и
   # appVersionCode в app/build.gradle.kts (там литералы — требование F-Droid).
-  APP_VERSION: "0.5.6"
+  APP_VERSION: "0.5.7"
 
 # Все джобы по умолчанию — на Docker-раннере: этот инстанс не берёт джобы без
 # тега `docker`. Джобы под другой раннер (например FreeBSD) переопределяют `tags`.
@@ -149,6 +149,46 @@ create-release:
         - name: "fdroid.apk (сборка для F-Droid)"
           url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/currency-converter/$APP_VERSION/fdroid.apk"
           link_type: "package"
+
+# Зеркалим релиз на GitHub (github.com/yukh975/netadm-currency-app) — источник
+# для F-Droid: ветка android, тег версии и GitHub-релиз с APK-ассетами
+# (fdroid.apk — файл байт-сравнения reproducible builds). Пушится ТОЛЬКО ветка
+# android и теги версий — код бота (main) на GitHub не попадает. Сбой зеркала
+# не валит канонический релиз (allow_failure).
+publish-github:
+  stage: release
+  image: alpine:latest
+  needs:
+    - job: assembleRelease
+      artifacts: true
+    - job: create-release
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "android" && $KEYSTORE_BASE64 && $GITHUB_TOKEN'
+  allow_failure: true
+  before_script: []
+  cache: {}
+  variables:
+    GIT_DEPTH: "0"
+    GH_REPO: "yukh975/netadm-currency-app"
+  script:
+    - apk add --no-cache git curl jq
+    - GH_URL="https://yukh975:${GITHUB_TOKEN}@github.com/${GH_REPO}.git"
+    # ветка android (актуальный HEAD origin) + тег релиза
+    - git fetch origin android
+    - git push "$GH_URL" "refs/remotes/origin/android:refs/heads/android"
+    - git push "$GH_URL" "$CI_COMMIT_SHA:refs/tags/v$APP_VERSION" || true
+    # GitHub-релиз: взять существующий или создать
+    - 'REL_ID=$(curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/$GH_REPO/releases/tags/v$APP_VERSION" | jq -r ".id // empty")'
+    - |
+      if [ -z "$REL_ID" ]; then
+        REL_ID=$(curl -fsS -X POST -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/$GH_REPO/releases" \
+          -d "{\"tag_name\":\"v$APP_VERSION\",\"name\":\"Конвертер валют v$APP_VERSION\",\"body\":\"Релиз v$APP_VERSION. Список изменений — в CHANGELOG.md. fdroid.apk — сборка для каталога F-Droid.\"}" | jq -r '.id')
+      fi
+    - echo "GitHub release id=$REL_ID"
+    - APK=$(ls app/build/outputs/apk/direct/release/*.apk | head -1)
+    - FDROID_APK=$(ls app/build/outputs/apk/fdroid/release/*.apk | head -1)
+    - 'curl -fsS -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Content-Type: application/vnd.android.package-archive" --data-binary @"$FDROID_APK" "https://uploads.github.com/repos/$GH_REPO/releases/$REL_ID/assets?name=fdroid.apk" | jq -r ".state"'
+    - 'curl -fsS -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Content-Type: application/vnd.android.package-archive" --data-binary @"$APK" "https://uploads.github.com/repos/$GH_REPO/releases/$REL_ID/assets?name=currency-converter-$APP_VERSION.apk" | jq -r ".state"'
 
 # ---- Публикация (ручной запуск, активна при наличии креденшелов) ----
 # Берёт собранный артефакт из assembleRelease, заливает в магазин.
