@@ -1,8 +1,8 @@
 package net.yukh.currency.ui
 
 import android.app.Activity
-import android.app.TimePickerDialog
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -237,9 +237,12 @@ private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
                             Text(row.text, style = MaterialTheme.typography.bodyMedium)
                             if (row.delta != null) {
                                 Spacer(Modifier.width(6.dp))
+                                // в тёмной теме тёмные оттенки не читаются
+                                // на фоне карточки — берём светлые
+                                val dark = isSystemInDarkTheme()
                                 val color = when (row.deltaUp) {
-                                    true -> Color(0xFF2E7D32)   // рост — зелёный
-                                    false -> Color(0xFFC62828)  // падение — красный
+                                    true -> if (dark) Color(0xFF81C784) else Color(0xFF2E7D32)
+                                    false -> if (dark) Color(0xFFEF9A9A) else Color(0xFFD32F2F)
                                     null -> MaterialTheme.colorScheme.onSurfaceVariant
                                 }
                                 Text(
@@ -391,26 +394,6 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
         }
 
         val context = LocalContext.current
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.notify_time), style = MaterialTheme.typography.bodyLarge)
-                Text(stringResource(R.string.notify_time_hint), style = MaterialTheme.typography.bodySmall)
-            }
-            TextButton(
-                enabled = settings.notify,
-                onClick = {
-                    TimePickerDialog(
-                        context,
-                        { _, h, m -> vm.setNotifyTime(h, m) },
-                        settings.notifyHour,
-                        settings.notifyMinute,
-                        true,
-                    ).show()
-                },
-            ) {
-                Text(String.format("%02d:%02d", settings.notifyHour, settings.notifyMinute))
-            }
-        }
 
         HorizontalDivider()
         Row(verticalAlignment = Alignment.CenterVertically) {

@@ -193,12 +193,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun toggleSmart(v: Boolean) = viewModelScope.launch { store.setSmart(v) }
 
-    fun toggleNotify(v: Boolean) = viewModelScope.launch { store.setNotify(v) }
-
-    /** Сохранить время ежедневной сводки и сразу перепланировать уведомление. */
-    fun setNotifyTime(hour: Int, minute: Int) = viewModelScope.launch {
-        store.setNotifyTime(hour, minute)
-        DailyUpdateWorker.ensureScheduled(appCtx, hour, minute)
+    /** Вкл/выкл уведомление о новом курсе (запускает/останавливает наблюдение). */
+    fun toggleNotify(v: Boolean) = viewModelScope.launch {
+        store.setNotify(v)
+        if (v) DailyUpdateWorker.ensureScheduled(appCtx) else DailyUpdateWorker.cancel(appCtx)
     }
 
     fun addFavorite(code: String) = viewModelScope.launch {

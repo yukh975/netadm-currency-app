@@ -1,0 +1,1 @@
+Fixed: the updater could install the build that has no updater. The rate notification now arrives as soon as a new rate is published (the fixed-time setting is gone) and is no longer lost or delayed. Up/down colors are readable in the dark theme.

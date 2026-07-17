@@ -10,7 +10,7 @@ variables:
   # Версия приложения — единая с Telegram-ботом (ручной SemVer, см. CHANGELOG.md).
   # Поднимать вручную при выпуске новой версии — СИНХРОННО с appVersionName и
   # appVersionCode в app/build.gradle.kts (там литералы — требование F-Droid).
-  APP_VERSION: "0.6.2"
+  APP_VERSION: "0.6.3"
 
 # Все джобы по умолчанию — на Docker-раннере: этот инстанс не берёт джобы без
 # тега `docker`. Джобы под другой раннер (например FreeBSD) переопределяют `tags`.
@@ -138,6 +138,10 @@ create-release:
     name: "Конвертер валют v$APP_VERSION"
     ref: "$CI_COMMIT_SHA"
     description: "Релиз v$APP_VERSION (сборка пайплайна #$CI_PIPELINE_IID). Список изменений — в CHANGELOG.md."
+    # ⚠️ GitLab отдаёт assets.links в ОБРАТНОМ порядке (по убыванию id), поэтому
+    # в API первым идёт последний в этом списке. Апдейтер приложения выбирает
+    # APK строго по имени (currency-converter-*.apk), не «первый .apk» — см.
+    # UpdateChecker.pickDirectApk; порядок ниже влияет только на вид страницы.
     assets:
       links:
         - name: "APK (app-release)"

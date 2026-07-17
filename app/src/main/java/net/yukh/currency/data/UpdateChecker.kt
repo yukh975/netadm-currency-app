@@ -35,15 +35,8 @@ object UpdateChecker {
                 if (remote.isBlank() || compareSemVer(remote, currentVersion) <= 0) {
                     return@withContext null
                 }
-                val links = rel.optJSONObject("assets")?.optJSONArray("links")
-                var apk = ""
-                if (links != null) {
-                    for (i in 0 until links.length()) {
-                        val url = links.getJSONObject(i).optString("url")
-                        if (url.endsWith(".apk", ignoreCase = true)) { apk = url; break }
-                    }
-                }
-                if (apk.isBlank()) return@withContext null
+                val apk = pickDirectApk(rel.optJSONObject("assets")?.optJSONArray("links"))
+                    ?: return@withContext null
                 // Список изменений берём ТОЛЬКО из CHANGELOG.md (публичный raw).
                 // Описание релиза не используем — там служебный текст. Если раздел
                 // не найден, оставляем пусто (в UI покажется «недоступен»).
@@ -51,6 +44,26 @@ object UpdateChecker {
                 Update(remote, apk, notes)
             }
         }
+
+    /**
+     * Выбрать из ассетов релиза APK ИМЕННО нашей sideload-сборки (`direct`).
+     *
+     * ⚠️ Нельзя брать «первый .apk»: в релизе лежит ещё `fdroid.apk` (сборка для
+     * каталога F-Droid, у неё UPDATE_ENABLED=false), а GitLab отдаёт ссылки в
+     * обратном порядке — fdroid.apk идёт ПЕРВЫМ. Так апдейтер ставил поверх
+     * direct-сборки F-Droid'овскую (подпись одна, установка проходит молча) —
+     * и кнопка обновления «пропадала». Поэтому: только `currency-converter-*.apk`,
+     * `fdroid.apk` игнорируем явно.
+     */
+    private fun pickDirectApk(links: JSONArray?): String? {
+        if (links == null) return null
+        for (i in 0 until links.length()) {
+            val url = links.getJSONObject(i).optString("url")
+            val file = url.substringAfterLast('/').lowercase()
+            if (file.startsWith("currency-converter-") && file.endsWith(".apk")) return url
+        }
+        return null
+    }
 
     /** Достать раздел CHANGELOG.md для версии [version] и слегка очистить markdown. */
     private fun fetchChangelog(client: OkHttpClient, version: String): String? {

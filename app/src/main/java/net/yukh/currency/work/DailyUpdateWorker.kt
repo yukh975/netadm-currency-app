@@ -11,13 +11,10 @@ import net.yukh.currency.ui.MainActivity
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import androidx.work.workDataOf
 import net.yukh.currency.CurrencyApp
 import net.yukh.currency.R
 import net.yukh.currency.data.Converter
@@ -28,13 +25,15 @@ import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
 /**
- * Ежедневное обновление курсов и уведомление-сводка.
+ * Наблюдение за курсом и уведомление-сводка.
  *
- * Поведение (как у бота, но правильнее): уведомление уходит ТОЛЬКО когда курс
- * реально сменился с прошлого уведомления. Если на заданное время курс ещё не
- * обновился — перезапрашиваем каждые [RETRY_MINUTES] минут (до [MAX_RETRIES]
- * попыток) цепочкой one-time воркеров. В нерабочие дни РФ (выходные и офиц.
- * праздники, по isdayoff.ru) не шлём и не повторяем — нового курса ЦБ не будет.
+ * Модель (с 0.6.3, решение пользователя): фиксированного времени сводки НЕТ.
+ * Периодическая задача раз в [CHECK_INTERVAL_MINUTES] минут (в окне
+ * [QUIET_UNTIL_HOUR]–[QUIET_FROM_HOUR] по МСК) проверяет источник, и как
+ * только опубликован новый курс (sourceDate сменился с прошлого уведомления —
+ * персистентный маркер) — сразу шлёт сводку. «Пустых» уведомлений не бывает;
+ * ретраи не нужны — следующая проверка сама придёт через полчаса.
+ * У ЦБ в нерабочие дни РФ (isdayoff.ru) курс не выходит — сеть не дёргаем.
  */
 class DailyUpdateWorker(
     ctx: Context,
@@ -46,18 +45,22 @@ class DailyUpdateWorker(
         val s = app.settingsStore.current()
         if (!s.notify || s.favorites.isEmpty()) return Result.success()
 
-        val attempt = inputData.getInt(KEY_ATTEMPT, 0)
+        // ночью не проверяем и не будим пользователя (окно 08:00–22:59 МСК);
+        // «ночное» обновление рыночного курса доедет с первой утренней проверкой
+        val hourMsk = Calendar.getInstance(TimeZone.getTimeZone("Europe/Moscow"))
+            .get(Calendar.HOUR_OF_DAY)
+        if (hourMsk < QUIET_UNTIL_HOUR || hourMsk >= QUIET_FROM_HOUR) return Result.success()
 
-        // Нерабочий день РФ — нового курса ЦБ не будет: не шлём и не повторяем.
-        if (!isWorkingDayMoscow(app)) return Result.success()
+        // Нерабочий день РФ — нового курса ЦБ не будет: не дёргаем источник.
+        if (s.source == "cbr" && !isWorkingDayMoscow(app)) return Result.success()
 
         return try {
             val needed = (s.favorites + s.base).toSet()
             val (table, _) = app.repository.refresh(s.source, needed)
 
-            // «Изменился» = sourceDate отличается от того, о чём уже уведомляли
-            // (сравниваем с сохранённой меткой, а не с кэшем — ручное обновление
-            // курса в приложении не «съедает» уведомление).
+            // «Новый курс» = sourceDate отличается от того, о чём уже уведомляли
+            // (персистентный маркер, а не кэш — ручное обновление курса в
+            // приложении не «съедает» уведомление).
             val marker = app.settingsStore.lastNotified(s.source)
             val isNew = table.sourceDate.isNotBlank() && table.sourceDate != marker
 
@@ -76,21 +79,14 @@ class DailyUpdateWorker(
                 } else {
                     loc.getString(R.string.notif_title)
                 }
-                notify(
-                    applicationContext,
-                    title,
-                    text.ifBlank { loc.getString(R.string.notif_no_data) },
-                )
-                app.settingsStore.setLastNotified(s.source, table.sourceDate)
-                Result.success()
-            } else {
-                // курс ещё не сменился — повтор через RETRY_MINUTES (только рабочий день)
-                if (attempt < MAX_RETRIES) scheduleRetry(applicationContext, attempt + 1)
-                Result.success()
+                if (text.isNotBlank()) {
+                    notify(applicationContext, title, text)
+                    app.settingsStore.setLastNotified(s.source, table.sourceDate)
+                }
             }
+            Result.success()
         } catch (e: Exception) {
-            // сеть упала — повторим позже (не считаем это «изменением»)
-            if (attempt < MAX_RETRIES) scheduleRetry(applicationContext, attempt + 1)
+            // сеть/источник недоступны — просто дождёмся следующей проверки
             Result.success()
         }
     }
@@ -142,33 +138,15 @@ class DailyUpdateWorker(
         return dow != Calendar.SATURDAY && dow != Calendar.SUNDAY
     }
 
-    private fun scheduleRetry(ctx: Context, attempt: Int) {
-        val request = OneTimeWorkRequestBuilder<DailyUpdateWorker>()
-            .setInitialDelay(RETRY_MINUTES, TimeUnit.MINUTES)
-            .setInputData(workDataOf(KEY_ATTEMPT to attempt))
-            .setConstraints(
-                Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build(),
-            )
-            .build()
-        WorkManager.getInstance(ctx).enqueueUniqueWork(
-            RETRY_WORK_NAME,
-            ExistingWorkPolicy.REPLACE,
-            request,
-        )
-    }
-
     companion object {
         const val CHANNEL_ID = "daily_rates"
         private const val WORK_NAME = "daily_update"
-        private const val RETRY_WORK_NAME = "daily_update_retry"
-        private const val KEY_ATTEMPT = "attempt"
+        private const val LEGACY_RETRY_WORK_NAME = "daily_update_retry"
         private const val NOTIFICATION_ID = 1001
 
-        // Повтор каждые 30 мин, до 12 попыток (≈6 часов) — как у бота.
-        private const val RETRY_MINUTES = 30L
-        private const val MAX_RETRIES = 12
+        private const val CHECK_INTERVAL_MINUTES = 30L
+        private const val QUIET_UNTIL_HOUR = 8   // МСК: до 08:00 не проверяем
+        private const val QUIET_FROM_HOUR = 23   // МСК: с 23:00 не проверяем
 
         fun createChannel(ctx: Context) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -182,11 +160,17 @@ class DailyUpdateWorker(
             }
         }
 
-        /** Запланировать ежедневное уведомление на hour:minute (МСК).
-         *  REPLACE — чтобы смена времени в настройках сразу применялась. */
-        fun ensureScheduled(ctx: Context, hour: Int = 17, minute: Int = 0) {
-            val request = PeriodicWorkRequestBuilder<DailyUpdateWorker>(1, TimeUnit.DAYS)
-                .setInitialDelay(initialDelayMs(hour, minute), TimeUnit.MILLISECONDS)
+        /** Запланировать периодическое наблюдение за курсом.
+         *  UPDATE — обновляет спецификацию существующей задачи (миграция со
+         *  старой суточной), НЕ сбрасывая расписание при каждом запуске
+         *  приложения (прежний REPLACE отменял ещё не отработавшую сегодняшнюю
+         *  сводку, если приложение открыли после назначенного времени). */
+        fun ensureScheduled(ctx: Context) {
+            // миграция: подчистить ретрай-цепочку старой модели «сводка в hh:mm»
+            WorkManager.getInstance(ctx).cancelUniqueWork(LEGACY_RETRY_WORK_NAME)
+            val request = PeriodicWorkRequestBuilder<DailyUpdateWorker>(
+                CHECK_INTERVAL_MINUTES, TimeUnit.MINUTES,
+            )
                 .setConstraints(
                     Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -195,22 +179,15 @@ class DailyUpdateWorker(
                 .build()
             WorkManager.getInstance(ctx).enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.REPLACE,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 request,
             )
         }
 
-        private fun initialDelayMs(hour: Int, minute: Int): Long {
-            val tz = TimeZone.getTimeZone("Europe/Moscow")
-            val now = Calendar.getInstance(tz)
-            val next = Calendar.getInstance(tz).apply {
-                set(Calendar.HOUR_OF_DAY, hour)
-                set(Calendar.MINUTE, minute)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            if (!next.after(now)) next.add(Calendar.DAY_OF_MONTH, 1)
-            return next.timeInMillis - now.timeInMillis
+        /** Остановить наблюдение (уведомления выключены в настройках). */
+        fun cancel(ctx: Context) {
+            WorkManager.getInstance(ctx).cancelUniqueWork(WORK_NAME)
+            WorkManager.getInstance(ctx).cancelUniqueWork(LEGACY_RETRY_WORK_NAME)
         }
     }
 }

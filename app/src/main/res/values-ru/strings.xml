@@ -33,10 +33,8 @@
     <string name="refresh_now">🔄 Обновить курсы сейчас</string>
     <string name="smart_format">Удобный формат курса</string>
     <string name="smart_format_hint">Для дешёвых валют: «100 RSD = 73 RUB»</string>
-    <string name="daily_notification">Ежедневное уведомление</string>
-    <string name="daily_notification_hint">Сводка курсов избранных валют (МСК)</string>
-    <string name="notify_time">Время уведомления</string>
-    <string name="notify_time_hint">Когда присылать сводку</string>
+    <string name="daily_notification">Уведомление о новом курсе</string>
+    <string name="daily_notification_hint">Сводка избранных курсов придёт, как только источник опубликует новый курс (ЦБ — раз в рабочий день)</string>
     <string name="cache_note">Курсы кэшируются на 3 часа и обновляются ежедневно. Источники: ЦБ РФ (cbr-xml-daily.ru) и Google (open.er-api.com).</string>
     <string name="lang_section">Язык</string>
     <string name="lang_system">Как в системе</string>
