@@ -1,0 +1,1 @@
+English localization: the UI follows the system language (English/Russian), including notifications; currency search works in both languages. Better first-run defaults (USD and EUR pre-added to favorites) and a hint when there is nothing to convert to.

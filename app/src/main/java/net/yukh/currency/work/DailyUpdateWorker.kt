@@ -62,15 +62,23 @@ class DailyUpdateWorker(
             val isNew = table.sourceDate.isNotBlank() && table.sourceDate != marker
 
             if (isNew) {
-                val rows = Converter.summary(table, s.base, s.favorites, s.smartUnits)
+                val rows = Converter.summary(applicationContext, table, s.base, s.favorites, s.smartUnits)
                 // динамику в тексте уведомления показываем обычным текстом (без цвета)
                 val text = rows.joinToString("\n") { r ->
                     r.text + (r.delta?.let { " ($it)" } ?: "")
                 }
                 // заголовок — на дату, НА которую действует курс (у ЦБ это завтра)
                 val date = Converter.courseDate(table)
-                val title = if (date != null) "Курсы валют на $date" else "Курсы валют"
-                notify(applicationContext, title, text.ifBlank { "Нет данных" })
+                val title = if (date != null) {
+                    applicationContext.getString(R.string.notif_title_fmt, date)
+                } else {
+                    applicationContext.getString(R.string.notif_title)
+                }
+                notify(
+                    applicationContext,
+                    title,
+                    text.ifBlank { applicationContext.getString(R.string.notif_no_data) },
+                )
                 app.settingsStore.setLastNotified(s.source, table.sourceDate)
                 Result.success()
             } else {
@@ -164,7 +172,7 @@ class DailyUpdateWorker(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
                     CHANNEL_ID,
-                    "Ежедневная сводка курсов",
+                    ctx.getString(R.string.notif_channel),
                     NotificationManager.IMPORTANCE_DEFAULT,
                 )
                 val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

@@ -1,4 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Локаль по умолчанию — английская (требование ревью F-Droid: приложение
+     должно поддерживать английский). Русские строки — в values-ru/. -->
 <resources>
-    <string name="app_name">Конвертер валют</string>
+    <string name="app_name">Currency Converter</string>
+
+    <!-- Bottom navigation -->
+    <string name="tab_convert">Convert</string>
+    <string name="tab_favorites">Favorites</string>
+    <string name="tab_settings">Settings</string>
+    <string name="tab_about">About</string>
+
+    <!-- Convert screen -->
+    <string name="source_currency">Source currency</string>
+    <string name="amount_placeholder">Amount (e.g. 1000)</string>
+    <string name="convert_button">Convert</string>
+    <string name="summary_button">🔔 Rates summary</string>
+    <string name="summary_title">Favorite currency rates</string>
+    <string name="no_targets_hint">Add currencies in the ⭐ Favorites tab to see conversion results.</string>
+
+    <!-- Favorites screen -->
+    <string name="search_placeholder">Search: code, name or country</string>
+    <string name="favorites_title">Favorites</string>
+    <string name="remove">Remove</string>
+
+    <!-- Settings screen -->
+    <string name="rates_source">Rates source</string>
+    <string name="source_cbr">🇷🇺 CBR (Bank of Russia)</string>
+    <string name="source_google">🌐 Google</string>
+    <string name="my_currency">My currency</string>
+    <string name="my_currency_hint">Your permanent home currency. The rates summary in notifications is calculated against it; the converter uses it as the default source currency (you can switch it there temporarily).\n\nThe choices below come from your favorites (⭐ Favorites tab). To make a currency appear here, add it to favorites.</string>
+    <string name="rates_section">Rates</string>
+    <string name="refreshing">Refreshing…</string>
+    <string name="refresh_now">🔄 Refresh rates now</string>
+    <string name="smart_format">Smart rate format</string>
+    <string name="smart_format_hint">For cheap currencies: “100 RSD = 73 RUB”</string>
+    <string name="daily_notification">Daily notification</string>
+    <string name="daily_notification_hint">Summary of favorite currency rates (MSK)</string>
+    <string name="notify_time">Notification time</string>
+    <string name="notify_time_hint">When to send the summary</string>
+    <string name="cache_note">Rates are cached for 3 hours and refreshed daily. Sources: CBR (cbr-xml-daily.ru) and Google (open.er-api.com).</string>
+
+    <!-- About screen -->
+    <string name="version_fmt">Version %1$s</string>
+    <string name="about_description">Currency converter using CBR (Bank of Russia) or Google rates. Pick a source and a source currency, add the currencies you need to favorites and enter an amount — you get the conversion into all favorites. Includes a smart format for cheap currencies, a rate cache and a daily summary at a chosen time.</string>
+    <string name="site_link">🌐 Developer website — netadm.pro</string>
+    <string name="bot_link">✈️ Telegram bot with the same features</string>
+    <string name="bot_note">The same converter is available as a Telegram bot: the same sources (CBR / Google), favorite currencies, home currency and daily rates digest.</string>
+    <string name="copyright">© 2026 Yuriy Khachaturian</string>
+    <string name="license_mit">MIT license</string>
+
+    <!-- Update section (direct flavor only) -->
+    <string name="update_section">Update</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_latest_fmt">You already have the latest version (%1$s).</string>
+    <string name="update_check_failed_fmt">Couldn’t check for updates: %1$s</string>
+    <string name="network_error">network error</string>
+    <string name="update_available_fmt">Version %1$s available</string>
+    <string name="update_installed_fmt">Installed: %1$s</string>
+    <string name="update_no_changelog">Changelog unavailable.</string>
+    <string name="update_install">Install</string>
+    <string name="update_later">Later</string>
+    <string name="update_allow_install">Allow installing from this source and try again.</string>
+    <string name="update_downloading">Downloading…</string>
+    <string name="update_installing">Starting install…</string>
+    <string name="update_download_error_fmt">Download error: %1$s</string>
+    <string name="unknown">unknown</string>
+    <string name="ok">OK</string>
+
+    <!-- ViewModel messages -->
+    <string name="updated_never">Updated: —</string>
+    <string name="updated_fmt">Updated: %1$s</string>
+    <string name="add_favorites_first">Add currencies to favorites</string>
+    <string name="source_unavailable">Source unavailable. Try again later.</string>
+    <string name="refresh_failed">Couldn’t refresh rates. Check your connection.</string>
+    <string name="enter_amount">Enter an amount, e.g. 1000 or USD 100</string>
+    <string name="unknown_currency_fmt">Unknown currency: %1$s</string>
+    <string name="amount_not_understood">Couldn’t parse the amount</string>
+
+    <!-- Converter output -->
+    <string name="label_base_suffix">"  (base)"</string>
+    <string name="no_data">no data</string>
+    <string name="freshness_source_fmt">📊 Source: %1$s</string>
+    <string name="freshness_rate_updated_fmt">🕒 Rate updated: %1$s MSK</string>
+    <string name="freshness_rate_date_fmt">📅 Rate for date: %1$s</string>
+    <string name="freshness_updated_fmt">🕒 Updated: %1$s MSK</string>
+    <string name="last_updated_fmt">%1$s MSK</string>
+    <string name="source_label_cbr">🇷🇺 CBR</string>
+    <string name="source_label_google">🌐 Google</string>
+
+    <!-- Daily notification -->
+    <string name="notif_title_fmt">Exchange rates for %1$s</string>
+    <string name="notif_title">Exchange rates</string>
+    <string name="notif_no_data">No data</string>
+    <string name="notif_channel">Daily rates summary</string>
 </resources>

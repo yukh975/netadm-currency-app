@@ -1,81 +1,109 @@
 package net.yukh.currency.data
 
-/** Справочник валют: название, флаг страны, страна. */
+import java.util.Locale
+
+/** Справочник валют: название, флаг страны, страна (уже в языке интерфейса). */
 data class CurrencyInfo(val name: String, val flag: String, val country: String)
+
+/** Двуязычная запись каталога (ru + en); наружу отдаётся CurrencyInfo по локали. */
+private data class Entry(
+    val nameRu: String,
+    val nameEn: String,
+    val flag: String,
+    val countryRu: String,
+    val countryEn: String,
+)
 
 /**
  * Каталог валют для поиска и отображения. Совпадает с набором бота
  * (все валюты ЦБ РФ). Коды от источника регистрируются динамически.
+ * Названия/страны хранятся на двух языках: интерфейс берёт по системной
+ * локали, поиск матчится по обоим языкам сразу.
  */
 object Currencies {
-    private val map: LinkedHashMap<String, CurrencyInfo> = linkedMapOf(
-        "RUB" to CurrencyInfo("Российский рубль", "🇷🇺", "Россия"),
-        "USD" to CurrencyInfo("Доллар США", "🇺🇸", "США"),
-        "EUR" to CurrencyInfo("Евро", "🇪🇺", "Еврозона"),
-        "GBP" to CurrencyInfo("Фунт стерлингов", "🇬🇧", "Великобритания"),
-        "CHF" to CurrencyInfo("Швейцарский франк", "🇨🇭", "Швейцария"),
-        "JPY" to CurrencyInfo("Японская иена", "🇯🇵", "Япония"),
-        "CNY" to CurrencyInfo("Китайский юань", "🇨🇳", "Китай"),
-        "KZT" to CurrencyInfo("Казахстанский тенге", "🇰🇿", "Казахстан"),
-        "BYN" to CurrencyInfo("Белорусский рубль", "🇧🇾", "Беларусь"),
-        "UAH" to CurrencyInfo("Украинская гривна", "🇺🇦", "Украина"),
-        "TRY" to CurrencyInfo("Турецкая лира", "🇹🇷", "Турция"),
-        "GEL" to CurrencyInfo("Грузинский лари", "🇬🇪", "Грузия"),
-        "AMD" to CurrencyInfo("Армянский драм", "🇦🇲", "Армения"),
-        "AZN" to CurrencyInfo("Азербайджанский манат", "🇦🇿", "Азербайджан"),
-        "INR" to CurrencyInfo("Индийская рупия", "🇮🇳", "Индия"),
-        "AED" to CurrencyInfo("Дирхам ОАЭ", "🇦🇪", "ОАЭ"),
-        "THB" to CurrencyInfo("Тайский бат", "🇹🇭", "Таиланд"),
-        "VND" to CurrencyInfo("Вьетнамский донг", "🇻🇳", "Вьетнам"),
-        "KRW" to CurrencyInfo("Южнокорейская вона", "🇰🇷", "Южная Корея"),
-        "HKD" to CurrencyInfo("Гонконгский доллар", "🇭🇰", "Гонконг"),
-        "SGD" to CurrencyInfo("Сингапурский доллар", "🇸🇬", "Сингапур"),
-        "CAD" to CurrencyInfo("Канадский доллар", "🇨🇦", "Канада"),
-        "AUD" to CurrencyInfo("Австралийский доллар", "🇦🇺", "Австралия"),
-        "NZD" to CurrencyInfo("Новозеландский доллар", "🇳🇿", "Новая Зеландия"),
-        "BRL" to CurrencyInfo("Бразильский реал", "🇧🇷", "Бразилия"),
-        "PLN" to CurrencyInfo("Польский злотый", "🇵🇱", "Польша"),
-        "CZK" to CurrencyInfo("Чешская крона", "🇨🇿", "Чехия"),
-        "SEK" to CurrencyInfo("Шведская крона", "🇸🇪", "Швеция"),
-        "NOK" to CurrencyInfo("Норвежская крона", "🇳🇴", "Норвегия"),
-        "DKK" to CurrencyInfo("Датская крона", "🇩🇰", "Дания"),
-        "HUF" to CurrencyInfo("Венгерский форинт", "🇭🇺", "Венгрия"),
-        "RON" to CurrencyInfo("Румынский лей", "🇷🇴", "Румыния"),
-        "BGN" to CurrencyInfo("Болгарский лев", "🇧🇬", "Болгария"),
-        "RSD" to CurrencyInfo("Сербский динар", "🇷🇸", "Сербия"),
-        "ILS" to CurrencyInfo("Израильский шекель", "🇮🇱", "Израиль"),
-        "EGP" to CurrencyInfo("Египетский фунт", "🇪🇬", "Египет"),
-        "ZAR" to CurrencyInfo("Южноафриканский рэнд", "🇿🇦", "ЮАР"),
-        "MXN" to CurrencyInfo("Мексиканское песо", "🇲🇽", "Мексика"),
-        "IDR" to CurrencyInfo("Индонезийская рупия", "🇮🇩", "Индонезия"),
-        "MYR" to CurrencyInfo("Малайзийский ринггит", "🇲🇾", "Малайзия"),
-        "PHP" to CurrencyInfo("Филиппинское песо", "🇵🇭", "Филиппины"),
-        "QAR" to CurrencyInfo("Катарский риал", "🇶🇦", "Катар"),
-        "SAR" to CurrencyInfo("Саудовский риял", "🇸🇦", "Саудовская Аравия"),
-        "KGS" to CurrencyInfo("Киргизский сом", "🇰🇬", "Киргизия"),
-        "UZS" to CurrencyInfo("Узбекский сум", "🇺🇿", "Узбекистан"),
-        "TJS" to CurrencyInfo("Таджикский сомони", "🇹🇯", "Таджикистан"),
-        "TMT" to CurrencyInfo("Туркменский манат", "🇹🇲", "Туркменистан"),
-        "MDL" to CurrencyInfo("Молдавский лей", "🇲🇩", "Молдова"),
-        "BDT" to CurrencyInfo("Бангладешская така", "🇧🇩", "Бангладеш"),
-        "BOB" to CurrencyInfo("Боливийское боливиано", "🇧🇴", "Боливия"),
-        "CUP" to CurrencyInfo("Кубинское песо", "🇨🇺", "Куба"),
-        "DZD" to CurrencyInfo("Алжирский динар", "🇩🇿", "Алжир"),
-        "ETB" to CurrencyInfo("Эфиопский быр", "🇪🇹", "Эфиопия"),
-        "IRR" to CurrencyInfo("Иранский риал", "🇮🇷", "Иран"),
-        "MMK" to CurrencyInfo("Мьянманский кьят", "🇲🇲", "Мьянма"),
-        "MNT" to CurrencyInfo("Монгольский тугрик", "🇲🇳", "Монголия"),
-        "NGN" to CurrencyInfo("Нигерийская найра", "🇳🇬", "Нигерия"),
-        "OMR" to CurrencyInfo("Оманский риал", "🇴🇲", "Оман"),
-        "BHD" to CurrencyInfo("Бахрейнский динар", "🇧🇭", "Бахрейн"),
-        "XDR" to CurrencyInfo("СДР (спец. права заимствования)", "🏦", "МВФ"),
+    private fun e(nameRu: String, nameEn: String, flag: String, countryRu: String, countryEn: String) =
+        Entry(nameRu, nameEn, flag, countryRu, countryEn)
+
+    private val map: LinkedHashMap<String, Entry> = linkedMapOf(
+        "RUB" to e("Российский рубль", "Russian ruble", "🇷🇺", "Россия", "Russia"),
+        "USD" to e("Доллар США", "US dollar", "🇺🇸", "США", "United States"),
+        "EUR" to e("Евро", "Euro", "🇪🇺", "Еврозона", "Eurozone"),
+        "GBP" to e("Фунт стерлингов", "Pound sterling", "🇬🇧", "Великобритания", "United Kingdom"),
+        "CHF" to e("Швейцарский франк", "Swiss franc", "🇨🇭", "Швейцария", "Switzerland"),
+        "JPY" to e("Японская иена", "Japanese yen", "🇯🇵", "Япония", "Japan"),
+        "CNY" to e("Китайский юань", "Chinese yuan", "🇨🇳", "Китай", "China"),
+        "KZT" to e("Казахстанский тенге", "Kazakhstani tenge", "🇰🇿", "Казахстан", "Kazakhstan"),
+        "BYN" to e("Белорусский рубль", "Belarusian ruble", "🇧🇾", "Беларусь", "Belarus"),
+        "UAH" to e("Украинская гривна", "Ukrainian hryvnia", "🇺🇦", "Украина", "Ukraine"),
+        "TRY" to e("Турецкая лира", "Turkish lira", "🇹🇷", "Турция", "Turkey"),
+        "GEL" to e("Грузинский лари", "Georgian lari", "🇬🇪", "Грузия", "Georgia"),
+        "AMD" to e("Армянский драм", "Armenian dram", "🇦🇲", "Армения", "Armenia"),
+        "AZN" to e("Азербайджанский манат", "Azerbaijani manat", "🇦🇿", "Азербайджан", "Azerbaijan"),
+        "INR" to e("Индийская рупия", "Indian rupee", "🇮🇳", "Индия", "India"),
+        "AED" to e("Дирхам ОАЭ", "UAE dirham", "🇦🇪", "ОАЭ", "United Arab Emirates"),
+        "THB" to e("Тайский бат", "Thai baht", "🇹🇭", "Таиланд", "Thailand"),
+        "VND" to e("Вьетнамский донг", "Vietnamese dong", "🇻🇳", "Вьетнам", "Vietnam"),
+        "KRW" to e("Южнокорейская вона", "South Korean won", "🇰🇷", "Южная Корея", "South Korea"),
+        "HKD" to e("Гонконгский доллар", "Hong Kong dollar", "🇭🇰", "Гонконг", "Hong Kong"),
+        "SGD" to e("Сингапурский доллар", "Singapore dollar", "🇸🇬", "Сингапур", "Singapore"),
+        "CAD" to e("Канадский доллар", "Canadian dollar", "🇨🇦", "Канада", "Canada"),
+        "AUD" to e("Австралийский доллар", "Australian dollar", "🇦🇺", "Австралия", "Australia"),
+        "NZD" to e("Новозеландский доллар", "New Zealand dollar", "🇳🇿", "Новая Зеландия", "New Zealand"),
+        "BRL" to e("Бразильский реал", "Brazilian real", "🇧🇷", "Бразилия", "Brazil"),
+        "PLN" to e("Польский злотый", "Polish zloty", "🇵🇱", "Польша", "Poland"),
+        "CZK" to e("Чешская крона", "Czech koruna", "🇨🇿", "Чехия", "Czechia"),
+        "SEK" to e("Шведская крона", "Swedish krona", "🇸🇪", "Швеция", "Sweden"),
+        "NOK" to e("Норвежская крона", "Norwegian krone", "🇳🇴", "Норвегия", "Norway"),
+        "DKK" to e("Датская крона", "Danish krone", "🇩🇰", "Дания", "Denmark"),
+        "HUF" to e("Венгерский форинт", "Hungarian forint", "🇭🇺", "Венгрия", "Hungary"),
+        "RON" to e("Румынский лей", "Romanian leu", "🇷🇴", "Румыния", "Romania"),
+        "BGN" to e("Болгарский лев", "Bulgarian lev", "🇧🇬", "Болгария", "Bulgaria"),
+        "RSD" to e("Сербский динар", "Serbian dinar", "🇷🇸", "Сербия", "Serbia"),
+        "ILS" to e("Израильский шекель", "Israeli new shekel", "🇮🇱", "Израиль", "Israel"),
+        "EGP" to e("Египетский фунт", "Egyptian pound", "🇪🇬", "Египет", "Egypt"),
+        "ZAR" to e("Южноафриканский рэнд", "South African rand", "🇿🇦", "ЮАР", "South Africa"),
+        "MXN" to e("Мексиканское песо", "Mexican peso", "🇲🇽", "Мексика", "Mexico"),
+        "IDR" to e("Индонезийская рупия", "Indonesian rupiah", "🇮🇩", "Индонезия", "Indonesia"),
+        "MYR" to e("Малайзийский ринггит", "Malaysian ringgit", "🇲🇾", "Малайзия", "Malaysia"),
+        "PHP" to e("Филиппинское песо", "Philippine peso", "🇵🇭", "Филиппины", "Philippines"),
+        "QAR" to e("Катарский риал", "Qatari riyal", "🇶🇦", "Катар", "Qatar"),
+        "SAR" to e("Саудовский риял", "Saudi riyal", "🇸🇦", "Саудовская Аравия", "Saudi Arabia"),
+        "KGS" to e("Киргизский сом", "Kyrgyzstani som", "🇰🇬", "Киргизия", "Kyrgyzstan"),
+        "UZS" to e("Узбекский сум", "Uzbekistani sum", "🇺🇿", "Узбекистан", "Uzbekistan"),
+        "TJS" to e("Таджикский сомони", "Tajikistani somoni", "🇹🇯", "Таджикистан", "Tajikistan"),
+        "TMT" to e("Туркменский манат", "Turkmenistani manat", "🇹🇲", "Туркменистан", "Turkmenistan"),
+        "MDL" to e("Молдавский лей", "Moldovan leu", "🇲🇩", "Молдова", "Moldova"),
+        "BDT" to e("Бангладешская така", "Bangladeshi taka", "🇧🇩", "Бангладеш", "Bangladesh"),
+        "BOB" to e("Боливийское боливиано", "Bolivian boliviano", "🇧🇴", "Боливия", "Bolivia"),
+        "CUP" to e("Кубинское песо", "Cuban peso", "🇨🇺", "Куба", "Cuba"),
+        "DZD" to e("Алжирский динар", "Algerian dinar", "🇩🇿", "Алжир", "Algeria"),
+        "ETB" to e("Эфиопский быр", "Ethiopian birr", "🇪🇹", "Эфиопия", "Ethiopia"),
+        "IRR" to e("Иранский риал", "Iranian rial", "🇮🇷", "Иран", "Iran"),
+        "MMK" to e("Мьянманский кьят", "Myanmar kyat", "🇲🇲", "Мьянма", "Myanmar"),
+        "MNT" to e("Монгольский тугрик", "Mongolian tugrik", "🇲🇳", "Монголия", "Mongolia"),
+        "NGN" to e("Нигерийская найра", "Nigerian naira", "🇳🇬", "Нигерия", "Nigeria"),
+        "OMR" to e("Оманский риал", "Omani rial", "🇴🇲", "Оман", "Oman"),
+        "BHD" to e("Бахрейнский динар", "Bahraini dinar", "🇧🇭", "Бахрейн", "Bahrain"),
+        "XDR" to e("СДР (спец. права заимствования)", "SDR (special drawing rights)", "🏦", "МВФ", "IMF"),
     )
+
+    /** Коды, добавленные источником (имя — как отдал источник, без перевода). */
+    private val dynamic = HashMap<String, String>()
 
     val popular = listOf("RUB", "USD", "EUR", "GBP", "CNY", "KZT", "TRY", "GEL", "AMD")
 
-    fun info(code: String): CurrencyInfo = map[code] ?: CurrencyInfo(code, "🏳️", "")
+    private fun isRu(): Boolean = Locale.getDefault().language == "ru"
 
-    fun isKnown(code: String): Boolean = map.containsKey(code)
+    fun info(code: String): CurrencyInfo {
+        map[code]?.let { en ->
+            return if (isRu()) CurrencyInfo(en.nameRu, en.flag, en.countryRu)
+            else CurrencyInfo(en.nameEn, en.flag, en.countryEn)
+        }
+        dynamic[code]?.let { return CurrencyInfo(it, "🏳️", "") }
+        return CurrencyInfo(code, "🏳️", "")
+    }
+
+    fun isKnown(code: String): Boolean = code in map || code in dynamic
 
     fun label(code: String): String {
         val i = info(code)
@@ -85,26 +113,32 @@ object Currencies {
     /** Дополнить каталог кодами от источника (не перетирая описанные вручную). */
     fun register(names: Map<String, String>) {
         for ((code, name) in names) {
-            if (code !in map) map[code] = CurrencyInfo(name.ifBlank { code }, "🏳️", "")
+            if (code !in map && code !in dynamic) dynamic[code] = name.ifBlank { code }
         }
     }
 
+    /** Поиск по коду, названию или стране — на обоих языках сразу. */
     fun search(query: String, limit: Int = 12): List<String> {
         val q = query.trim().lowercase()
         if (q.isEmpty()) return emptyList()
         val exact = ArrayList<String>()
         val starts = ArrayList<String>()
         val contains = ArrayList<String>()
-        for ((code, i) in map) {
+        fun classify(code: String, fields: List<String>) {
             val lc = code.lowercase()
-            val ln = i.name.lowercase()
-            val lcountry = i.country.lowercase()
             when {
                 lc == q -> exact.add(code)
-                lc.startsWith(q) || ln.startsWith(q) || lcountry.startsWith(q) -> starts.add(code)
-                q in lc || q in ln || q in lcountry -> contains.add(code)
+                lc.startsWith(q) || fields.any { it.startsWith(q) } -> starts.add(code)
+                q in lc || fields.any { q in it } -> contains.add(code)
             }
         }
+        for ((code, i) in map) {
+            classify(
+                code,
+                listOf(i.nameRu.lowercase(), i.nameEn.lowercase(), i.countryRu.lowercase(), i.countryEn.lowercase()),
+            )
+        }
+        for ((code, name) in dynamic) classify(code, listOf(name.lowercase()))
         return (exact + starts + contains).take(limit)
     }
 }

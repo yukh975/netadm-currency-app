@@ -1,5 +1,7 @@
 💱 A simple, fast currency converter using rates from the Central Bank of Russia (CBR) or market (mid-market) rates.
 
+Available in English and Russian (follows the system language).
+
 Features:
 • Two rate sources — 🇷🇺 CBR and 🌐 market (mid-market) rate.
 • All CBR currencies, including less common ones.

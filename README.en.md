@@ -9,6 +9,7 @@ data collection.
 
 ## Features
 
+- English and Russian interface — follows the system language.
 - Two rate sources — 🇷🇺 CBR and 🌐 market (mid-market) rate.
 - All CBR currencies, including less common ones.
 - "My currency" — a persistent home currency the summary is computed against.

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русская локаль. Английские (по умолчанию) строки — в values/. -->
+<resources>
+    <string name="app_name">Конвертер валют</string>
+
+    <!-- Нижняя навигация -->
+    <string name="tab_convert">Конвертация</string>
+    <string name="tab_favorites">Избранное</string>
+    <string name="tab_settings">Настройки</string>
+    <string name="tab_about">О программе</string>
+
+    <!-- Экран конвертации -->
+    <string name="source_currency">Исходная валюта</string>
+    <string name="amount_placeholder">Сумма (например 1000)</string>
+    <string name="convert_button">Конвертировать</string>
+    <string name="summary_button">🔔 Сводка курсов</string>
+    <string name="summary_title">Курсы избранных валют</string>
+    <string name="no_targets_hint">Добавьте валюты на вкладке ⭐ Избранное, чтобы увидеть результат конвертации.</string>
+
+    <!-- Экран избранного -->
+    <string name="search_placeholder">Поиск: код, название или страна</string>
+    <string name="favorites_title">Избранное</string>
+    <string name="remove">Удалить</string>
+
+    <!-- Экран настроек -->
+    <string name="rates_source">Источник курсов</string>
+    <string name="source_cbr">🇷🇺 ЦБ РФ</string>
+    <string name="source_google">🌐 Google</string>
+    <string name="my_currency">Моя валюта</string>
+    <string name="my_currency_hint">Постоянная домашняя валюта. Относительно неё считается сводка в уведомлениях; в конверторе она подставляется как исходная по умолчанию (там её можно временно переключить).\n\nВыбор ниже — из валют вашего избранного (вкладка ⭐ Избранное). Чтобы валюта появилась здесь, добавьте её в избранное.</string>
+    <string name="rates_section">Курсы</string>
+    <string name="refreshing">Обновляю…</string>
+    <string name="refresh_now">🔄 Обновить курсы сейчас</string>
+    <string name="smart_format">Удобный формат курса</string>
+    <string name="smart_format_hint">Для дешёвых валют: «100 RSD = 73 RUB»</string>
+    <string name="daily_notification">Ежедневное уведомление</string>
+    <string name="daily_notification_hint">Сводка курсов избранных валют (МСК)</string>
+    <string name="notify_time">Время уведомления</string>
+    <string name="notify_time_hint">Когда присылать сводку</string>
+    <string name="cache_note">Курсы кэшируются на 3 часа и обновляются ежедневно. Источники: ЦБ РФ (cbr-xml-daily.ru) и Google (open.er-api.com).</string>
+
+    <!-- О программе -->
+    <string name="version_fmt">Версия %1$s</string>
+    <string name="about_description">Конвертер валют по курсам ЦБ РФ или Google. Выберите источник и исходную валюту, добавьте нужные валюты в избранное и вводите сумму — получите перевод во все избранные. Есть удобный формат для дешёвых валют, кэш курсов и ежедневная сводка в выбранное время.</string>
+    <string name="site_link">🌐 Сайт разработчика — netadm.pro</string>
+    <string name="bot_link">✈️ Telegram-бот с тем же функционалом</string>
+    <string name="bot_note">Тот же конвертер работает Telegram-ботом: те же источники (ЦБ РФ / Google), избранные валюты, основная валюта и ежедневная рассылка курсов.</string>
+    <string name="copyright">© 2026 Yuriy Khachaturian</string>
+    <string name="license_mit">Лицензия MIT</string>
+
+    <!-- Блок обновления (только flavor direct) -->
+    <string name="update_section">Обновление</string>
+    <string name="update_check">Проверить обновление</string>
+    <string name="update_checking">Проверяю…</string>
+    <string name="update_latest_fmt">У вас установлена последняя версия (%1$s).</string>
+    <string name="update_check_failed_fmt">Не удалось проверить обновление: %1$s</string>
+    <string name="network_error">ошибка сети</string>
+    <string name="update_available_fmt">Доступна версия %1$s</string>
+    <string name="update_installed_fmt">Установлена: %1$s</string>
+    <string name="update_no_changelog">Список изменений недоступен.</string>
+    <string name="update_install">Установить</string>
+    <string name="update_later">Позже</string>
+    <string name="update_allow_install">Разрешите установку из этого источника и повторите.</string>
+    <string name="update_downloading">Скачиваю…</string>
+    <string name="update_installing">Запускаю установку…</string>
+    <string name="update_download_error_fmt">Ошибка загрузки: %1$s</string>
+    <string name="unknown">неизвестно</string>
+    <string name="ok">OK</string>
+
+    <!-- Сообщения ViewModel -->
+    <string name="updated_never">Обновлено: —</string>
+    <string name="updated_fmt">Обновлено: %1$s</string>
+    <string name="add_favorites_first">Добавьте валюты в избранное</string>
+    <string name="source_unavailable">Источник недоступен. Попробуйте позже.</string>
+    <string name="refresh_failed">Не удалось обновить курсы. Проверьте соединение.</string>
+    <string name="enter_amount">Введите сумму, например 1000 или USD 100</string>
+    <string name="unknown_currency_fmt">Неизвестная валюта: %1$s</string>
+    <string name="amount_not_understood">Не понял сумму</string>
+
+    <!-- Вывод конвертора -->
+    <string name="label_base_suffix">"  (исходная)"</string>
+    <string name="no_data">нет данных</string>
+    <string name="freshness_source_fmt">📊 Источник: %1$s</string>
+    <string name="freshness_rate_updated_fmt">🕒 Курс обновлён: %1$s МСК</string>
+    <string name="freshness_rate_date_fmt">📅 Курс на дату: %1$s</string>
+    <string name="freshness_updated_fmt">🕒 Обновлено: %1$s МСК</string>
+    <string name="last_updated_fmt">%1$s МСК</string>
+    <string name="source_label_cbr">🇷🇺 ЦБ РФ</string>
+    <string name="source_label_google">🌐 Google</string>
+
+    <!-- Ежедневное уведомление -->
+    <string name="notif_title_fmt">Курсы валют на %1$s</string>
+    <string name="notif_title">Курсы валют</string>
+    <string name="notif_no_data">Нет данных</string>
+    <string name="notif_channel">Ежедневная сводка курсов</string>
+</resources>

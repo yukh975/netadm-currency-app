@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -62,6 +63,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import net.yukh.currency.BuildConfig
 import net.yukh.currency.CurrencyApp
+import net.yukh.currency.R
 import net.yukh.currency.data.ApkInstaller
 import net.yukh.currency.data.AppSettings
 import net.yukh.currency.data.Currencies
@@ -89,10 +91,10 @@ fun AppScreen(
     Scaffold(
         bottomBar = {
             val tabs = listOf(
-                Icons.Filled.SwapVert to "Конвертация",
-                Icons.Filled.Star to "Избранное",
-                Icons.Filled.Settings to "Настройки",
-                Icons.Filled.Info to "О программе",
+                Icons.Filled.SwapVert to stringResource(R.string.tab_convert),
+                Icons.Filled.Star to stringResource(R.string.tab_favorites),
+                Icons.Filled.Settings to stringResource(R.string.tab_settings),
+                Icons.Filled.Info to stringResource(R.string.tab_about),
             )
             Surface(tonalElevation = 3.dp) {
                 // отступ под системную навигацию Android 15 (edge-to-edge при
@@ -146,7 +148,7 @@ private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Исходная валюта", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.source_currency), style = MaterialTheme.typography.titleMedium)
         Row(
             Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -165,7 +167,7 @@ private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
             value = vm.input,
             onValueChange = vm::onInputChange,
             // статичная подсказка внутри рамки (не «плавающий» label)
-            placeholder = { Text("Сумма (например 1000)") },
+            placeholder = { Text(stringResource(R.string.amount_placeholder)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(
@@ -184,7 +186,7 @@ private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Конвертировать")
+            Text(stringResource(R.string.convert_button))
         }
 
         if (vm.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -212,7 +214,7 @@ private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
 
         HorizontalDivider(Modifier.padding(vertical = 4.dp))
         Button(onClick = { vm.showSummary() }, modifier = Modifier.fillMaxWidth()) {
-            Text("🔔 Сводка курсов")
+            Text(stringResource(R.string.summary_button))
         }
         if (vm.summaryLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
         vm.summaryError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -220,7 +222,7 @@ private fun ConvertScreen(vm: MainViewModel, settings: AppSettings) {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "Курсы избранных валют",
+                        stringResource(R.string.summary_title),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                     )
@@ -266,7 +268,7 @@ private fun FavoritesScreen(vm: MainViewModel, settings: AppSettings) {
             onValueChange = { query = it; vm.search(it) },
             // статичная подсказка внутри рамки (не «плавающий» label),
             // короче — чтобы помещалась в одну строку
-            placeholder = { Text("Поиск: код, название или страна") },
+            placeholder = { Text(stringResource(R.string.search_placeholder)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -285,13 +287,13 @@ private fun FavoritesScreen(vm: MainViewModel, settings: AppSettings) {
         }
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
-        Text("Избранное", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.favorites_title), style = MaterialTheme.typography.titleMedium)
 
         settings.favorites.forEach { code ->
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text(Currencies.label(code), modifier = Modifier.weight(1f))
                 IconButton(onClick = { vm.removeFavorite(code) }) {
-                    Icon(Icons.Filled.Close, contentDescription = "Удалить")
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.remove))
                 }
             }
         }
@@ -310,28 +312,24 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
         // подтянуть время последнего обновления при входе/смене источника
         LaunchedEffect(settings.source) { vm.refreshLastUpdate() }
 
-        Text("Источник курсов", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.rates_source), style = MaterialTheme.typography.titleMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
                 selected = settings.source == "cbr",
                 onClick = { vm.setSource("cbr") },
-                label = { Text("🇷🇺 ЦБ РФ") },
+                label = { Text(stringResource(R.string.source_cbr)) },
             )
             FilterChip(
                 selected = settings.source == "google",
                 onClick = { vm.setSource("google") },
-                label = { Text("🌐 Google") },
+                label = { Text(stringResource(R.string.source_google)) },
             )
         }
 
         HorizontalDivider()
-        Text("Моя валюта", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.my_currency), style = MaterialTheme.typography.titleMedium)
         Text(
-            "Постоянная домашняя валюта. Относительно неё считается сводка в " +
-                "уведомлениях; в конверторе она подставляется как исходная по умолчанию " +
-                "(там её можно временно переключить).\n\nВыбор ниже — из валют вашего " +
-                "избранного (вкладка ⭐ Избранное). Чтобы валюта появилась здесь, " +
-                "добавьте её в избранное.",
+            stringResource(R.string.my_currency_hint),
             style = MaterialTheme.typography.bodySmall,
         )
         Row(
@@ -348,13 +346,16 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
         }
 
         HorizontalDivider()
-        Text("Курсы", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.rates_section), style = MaterialTheme.typography.titleMedium)
         Button(
             onClick = { vm.refreshRates() },
             enabled = !vm.refreshing,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(if (vm.refreshing) "Обновляю…" else "🔄 Обновить курсы сейчас")
+            Text(
+                if (vm.refreshing) stringResource(R.string.refreshing)
+                else stringResource(R.string.refresh_now),
+            )
         }
         Text(vm.lastUpdate, style = MaterialTheme.typography.bodySmall)
         vm.refreshError?.let {
@@ -363,9 +364,9 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Удобный формат курса", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.smart_format), style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    "Для дешёвых валют: «100 RSD = 73 RUB»",
+                    stringResource(R.string.smart_format_hint),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -374,8 +375,11 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Ежедневное уведомление", style = MaterialTheme.typography.bodyLarge)
-                Text("Сводка курсов избранных валют (МСК)", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.daily_notification), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    stringResource(R.string.daily_notification_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
             Switch(checked = settings.notify, onCheckedChange = { vm.toggleNotify(it) })
         }
@@ -383,8 +387,8 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
         val context = LocalContext.current
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Время уведомления", style = MaterialTheme.typography.bodyLarge)
-                Text("Когда присылать сводку", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.notify_time), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.notify_time_hint), style = MaterialTheme.typography.bodySmall)
             }
             TextButton(
                 enabled = settings.notify,
@@ -404,8 +408,7 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
 
         Spacer(Modifier.width(0.dp))
         Text(
-            "Курсы кэшируются на 3 часа и обновляются ежедневно. Источники: " +
-                "ЦБ РФ (cbr-xml-daily.ru) и Google (open.er-api.com).",
+            stringResource(R.string.cache_note),
             style = MaterialTheme.typography.bodySmall,
         )
     }
@@ -424,28 +427,27 @@ private fun AboutScreen() {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("💱 Конвертер валют", style = MaterialTheme.typography.headlineSmall)
-        Text("Версия ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall)
+        Text("💱 " + stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall)
+        Text(
+            stringResource(R.string.version_fmt, BuildConfig.VERSION_NAME),
+            style = MaterialTheme.typography.bodySmall,
+        )
 
         Text(
-            "Конвертер валют по курсам ЦБ РФ или Google. Выберите источник и " +
-                "исходную валюту, добавьте нужные валюты в избранное и вводите сумму — " +
-                "получите перевод во все избранные. Есть удобный формат для дешёвых " +
-                "валют, кэш курсов и ежедневная сводка в выбранное время.",
+            stringResource(R.string.about_description),
             style = MaterialTheme.typography.bodyMedium,
         )
 
         HorizontalDivider()
 
         TextButton(onClick = { uri.openUri(SITE_URL) }) {
-            Text("🌐 Сайт разработчика — netadm.pro")
+            Text(stringResource(R.string.site_link))
         }
         TextButton(onClick = { uri.openUri(BOT_URL) }) {
-            Text("✈️ Telegram-бот с тем же функционалом")
+            Text(stringResource(R.string.bot_link))
         }
         Text(
-            "Тот же конвертер работает Telegram-ботом: те же источники (ЦБ РФ / Google), " +
-                "избранные валюты, основная валюта и ежедневная рассылка курсов.",
+            stringResource(R.string.bot_note),
             style = MaterialTheme.typography.bodySmall,
         )
 
@@ -456,8 +458,8 @@ private fun AboutScreen() {
 
         HorizontalDivider()
 
-        Text("© 2026 Yuriy Khachaturian", style = MaterialTheme.typography.bodySmall)
-        Text("Лицензия MIT", style = MaterialTheme.typography.bodySmall)
+        Text(stringResource(R.string.copyright), style = MaterialTheme.typography.bodySmall)
+        Text(stringResource(R.string.license_mit), style = MaterialTheme.typography.bodySmall)
     }
 }
 
@@ -483,31 +485,34 @@ private fun UpdateSection() {
         if (!ApkInstaller.canInstall(context)) {
             // сначала попросим разрешение ставить APK из этого источника
             ApkInstaller.requestInstallPermission(context)
-            status = "Разрешите установку из этого источника и повторите."
+            status = context.getString(R.string.update_allow_install)
             return
         }
         busy = true
-        status = "Скачиваю…"
+        status = context.getString(R.string.update_downloading)
         scope.launch {
             try {
                 val file = ApkInstaller.download(context, app.httpClient, u.apkUrl)
-                status = "Запускаю установку…"
+                status = context.getString(R.string.update_installing)
                 ApkInstaller.install(context, file)
             } catch (e: Exception) {
-                status = "Ошибка загрузки: ${e.message ?: "неизвестно"}"
+                status = context.getString(
+                    R.string.update_download_error_fmt,
+                    e.message ?: context.getString(R.string.unknown),
+                )
             } finally {
                 busy = false
             }
         }
     }
 
-    Text("Обновление", style = MaterialTheme.typography.titleSmall)
+    Text(stringResource(R.string.update_section), style = MaterialTheme.typography.titleSmall)
 
     Button(
         enabled = !busy,
         onClick = {
             busy = true
-            status = "Проверяю…"
+            status = context.getString(R.string.update_checking)
             scope.launch {
                 val result = try {
                     val u = UpdateChecker.check(app.httpClient, BuildConfig.VERSION_NAME)
@@ -515,11 +520,16 @@ private fun UpdateSection() {
                         UpdateDialog.Available(u)
                     } else {
                         UpdateDialog.Info(
-                            "У вас установлена последняя версия (${BuildConfig.VERSION_NAME}).",
+                            context.getString(R.string.update_latest_fmt, BuildConfig.VERSION_NAME),
                         )
                     }
                 } catch (e: Exception) {
-                    UpdateDialog.Info("Не удалось проверить обновление: ${e.message ?: "ошибка сети"}")
+                    UpdateDialog.Info(
+                        context.getString(
+                            R.string.update_check_failed_fmt,
+                            e.message ?: context.getString(R.string.network_error),
+                        ),
+                    )
                 }
                 status = null
                 dialog = result
@@ -527,7 +537,7 @@ private fun UpdateSection() {
             }
         },
     ) {
-        Text("Проверить обновление")
+        Text(stringResource(R.string.update_check))
     }
 
     status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
@@ -537,7 +547,7 @@ private fun UpdateSection() {
             val u = d.update
             AlertDialog(
                 onDismissRequest = { dialog = null },
-                title = { Text("Доступна версия ${u.versionName}") },
+                title = { Text(stringResource(R.string.update_available_fmt, u.versionName)) },
                 text = {
                     Column(
                         Modifier
@@ -546,11 +556,11 @@ private fun UpdateSection() {
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
-                            "Установлена: ${BuildConfig.VERSION_NAME}",
+                            stringResource(R.string.update_installed_fmt, BuildConfig.VERSION_NAME),
                             style = MaterialTheme.typography.bodySmall,
                         )
                         Text(
-                            u.notes.ifBlank { "Список изменений недоступен." },
+                            u.notes.ifBlank { stringResource(R.string.update_no_changelog) },
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }
@@ -559,19 +569,19 @@ private fun UpdateSection() {
                     TextButton(onClick = {
                         dialog = null
                         startInstall(u)
-                    }) { Text("Установить") }
+                    }) { Text(stringResource(R.string.update_install)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { dialog = null }) { Text("Позже") }
+                    TextButton(onClick = { dialog = null }) { Text(stringResource(R.string.update_later)) }
                 },
             )
         }
         is UpdateDialog.Info -> AlertDialog(
             onDismissRequest = { dialog = null },
-            title = { Text("Обновление") },
+            title = { Text(stringResource(R.string.update_section)) },
             text = { Text(d.message) },
             confirmButton = {
-                TextButton(onClick = { dialog = null }) { Text("OK") }
+                TextButton(onClick = { dialog = null }) { Text(stringResource(R.string.ok)) }
             },
         )
         null -> {}

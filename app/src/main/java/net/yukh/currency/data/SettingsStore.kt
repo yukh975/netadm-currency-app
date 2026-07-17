@@ -14,6 +14,11 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
+// Дефолт избранного: не один RUB — иначе при первом запуске конвертация
+// «в никуда» (нет целевых валют) и кнопка молча ничего не показывает
+// (поймано тестером F-Droid). RUB+USD+EUR дают результат сразу из коробки.
+val DEFAULT_FAVORITES = listOf("RUB", "USD", "EUR")
+
 data class AppSettings(
     val source: String = "cbr",
     val base: String = "RUB",
@@ -21,7 +26,7 @@ data class AppSettings(
     val notify: Boolean = false,
     val notifyHour: Int = 17,
     val notifyMinute: Int = 0,
-    val favorites: List<String> = listOf("RUB"),
+    val favorites: List<String> = DEFAULT_FAVORITES,
 )
 
 /** Хранилище настроек и избранного (DataStore Preferences) + кэш курсов. */
@@ -45,7 +50,7 @@ class SettingsStore(private val context: Context) {
             notify = p[Keys.notify] ?: false,
             notifyHour = p[Keys.notifyHour] ?: 17,
             notifyMinute = p[Keys.notifyMinute] ?: 0,
-            favorites = p[Keys.favorites]?.split(",")?.filter { it.isNotBlank() } ?: listOf("RUB"),
+            favorites = p[Keys.favorites]?.split(",")?.filter { it.isNotBlank() } ?: DEFAULT_FAVORITES,
         )
     }
 

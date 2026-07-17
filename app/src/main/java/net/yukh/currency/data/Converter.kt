@@ -1,5 +1,7 @@
 package net.yukh.currency.data
 
+import android.content.Context
+import net.yukh.currency.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -36,6 +38,7 @@ object Converter {
     }
 
     fun rows(
+        ctx: Context,
         table: RateTable,
         src: String,
         base: String,
@@ -50,9 +53,10 @@ object Converter {
 
         return targets.map { code ->
             val baseMark = code == base && code != src
-            val label = Currencies.label(code) + if (baseMark) "  (исходная)" else ""
+            val label = Currencies.label(code) +
+                if (baseMark) ctx.getString(R.string.label_base_suffix) else ""
             if (code !in table.rates) {
-                ConversionRow(code, label, baseMark, "нет данных", "")
+                ConversionRow(code, label, baseMark, ctx.getString(R.string.no_data), "")
             } else {
                 val result = table.convert(amount, src, code)
                 val reverse = rateLine(code, src, table.convert(1.0, code, src), smart)
@@ -77,6 +81,7 @@ object Converter {
      *  с динамикой (если у источника есть предыдущие курсы, как у ЦБ РФ).
      *  Основная валюта пропускается. */
     fun summary(
+        ctx: Context,
         table: RateTable,
         base: String,
         favorites: List<String>,
@@ -87,7 +92,7 @@ object Converter {
             if (code == base) continue
             val flag = Currencies.info(code).flag
             if (code !in table.rates) {
-                out.add(SummaryRow("$flag $code: нет данных"))
+                out.add(SummaryRow("$flag $code: ${ctx.getString(R.string.no_data)}"))
                 continue
             }
             val perBase = table.convert(1.0, code, base)
@@ -118,32 +123,39 @@ object Converter {
     fun courseDate(table: RateTable): String? =
         parseCourseDate(table.sourceDate, TimeZone.getTimeZone("Europe/Moscow"))
 
-    fun lastUpdated(table: RateTable): String {
+    fun lastUpdated(ctx: Context, table: RateTable): String {
         val tz = TimeZone.getTimeZone("Europe/Moscow")
         val fmt = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.US).apply { timeZone = tz }
-        return fmt.format(Date(table.fetchedAt)) + " МСК"
+        return ctx.getString(R.string.last_updated_fmt, fmt.format(Date(table.fetchedAt)))
     }
 
-    private val sourceLabels = mapOf("cbr" to "🇷🇺 ЦБ РФ", "google" to "🌐 Google")
+    private fun sourceLabel(ctx: Context, source: String): String = when (source) {
+        "cbr" -> ctx.getString(R.string.source_label_cbr)
+        "google" -> ctx.getString(R.string.source_label_google)
+        else -> source
+    }
 
-    fun freshness(table: RateTable): String {
+    fun freshness(ctx: Context, table: RateTable): String {
         val tz = TimeZone.getTimeZone("Europe/Moscow")
         val fmt = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.US).apply { timeZone = tz }
         val updated = fmt.format(Date(table.fetchedAt))
-        val label = sourceLabels[table.source] ?: table.source
         return buildString {
-            append("📊 Источник: ").append(label).append('\n')
+            append(ctx.getString(R.string.freshness_source_fmt, sourceLabel(ctx, table.source))).append('\n')
             // ЦБ — официальный курс на дату (без времени); рыночный — спот-курс,
             // обновляется в течение суток, поэтому показываем момент обновления
             // с временем по Москве.
             if (table.source == "google") {
                 val moment = parseCourseDateTime(table.sourceDate, tz)
-                if (moment != null) append("🕒 Курс обновлён: ").append(moment).append(" МСК").append('\n')
+                if (moment != null) {
+                    append(ctx.getString(R.string.freshness_rate_updated_fmt, moment)).append('\n')
+                }
             } else {
                 val courseDate = parseCourseDate(table.sourceDate, tz)
-                if (courseDate != null) append("📅 Курс на дату: ").append(courseDate).append('\n')
+                if (courseDate != null) {
+                    append(ctx.getString(R.string.freshness_rate_date_fmt, courseDate)).append('\n')
+                }
             }
-            append("🕒 Обновлено: ").append(updated).append(" МСК")
+            append(ctx.getString(R.string.freshness_updated_fmt, updated))
         }
     }
 

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import net.yukh.currency.CurrencyApp
+import net.yukh.currency.R
 import net.yukh.currency.data.AppSettings
 import net.yukh.currency.data.ConversionRow
 import net.yukh.currency.data.Converter
@@ -22,6 +23,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val appCtx = app as CurrencyApp
     private val repo = appCtx.repository
     private val store = appCtx.settingsStore
+
+    private fun str(id: Int, vararg args: Any): String = appCtx.getString(id, *args)
 
     val settings: StateFlow<AppSettings> =
         store.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppSettings())
@@ -38,7 +41,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var searchResults by mutableStateOf<List<String>>(emptyList())
         private set
-    var lastUpdate by mutableStateOf("Обновлено: —")
+    var lastUpdate by mutableStateOf("")
         private set
     var refreshing by mutableStateOf(false)
         private set
@@ -56,6 +59,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // null = использовать «мою валюту» (base) из настроек.
     var pickedSource by mutableStateOf<String?>(null)
         private set
+
+    init {
+        lastUpdate = str(R.string.updated_never)
+    }
 
     fun onInputChange(v: String) { input = v }
 
@@ -75,7 +82,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         // транзиентный выбор валиден, только пока он в избранном
         val src = picked?.takeIf { it in s.favorites } ?: s.base
         if (s.favorites.all { it == src }) {
-            summaryError = "Добавьте валюты в избранное"
+            summaryError = str(R.string.add_favorites_first)
             summary = emptyList()
             summaryFreshness = ""
             return
@@ -86,10 +93,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         try {
             // принудительно обновляем из источника — сводка всегда свежая
             val table = repo.getTable(s.source, needed, force = true)
-            summary = Converter.summary(table, src, s.favorites, s.smartUnits)
-            summaryFreshness = Converter.freshness(table)
+            summary = Converter.summary(appCtx, table, src, s.favorites, s.smartUnits)
+            summaryFreshness = Converter.freshness(appCtx, table)
         } catch (e: Exception) {
-            summaryError = "Источник недоступен. Попробуйте позже."
+            summaryError = str(R.string.source_unavailable)
             summary = emptyList()
             summaryFreshness = ""
         } finally {
@@ -101,7 +108,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun refreshLastUpdate() = viewModelScope.launch {
         val s = store.current()
         val table = repo.cachedTable(s.source)
-        lastUpdate = if (table != null) "Обновлено: " + Converter.lastUpdated(table) else "Обновлено: —"
+        lastUpdate = if (table != null) {
+            str(R.string.updated_fmt, Converter.lastUpdated(appCtx, table))
+        } else {
+            str(R.string.updated_never)
+        }
     }
 
     /** Принудительно обновить курсы текущего источника. */
@@ -112,9 +123,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         refreshError = null
         try {
             val table = repo.getTable(s.source, needed, force = true)
-            lastUpdate = "Обновлено: " + Converter.lastUpdated(table)
+            lastUpdate = str(R.string.updated_fmt, Converter.lastUpdated(appCtx, table))
         } catch (e: Exception) {
-            refreshError = "Не удалось обновить курсы. Проверьте соединение."
+            refreshError = str(R.string.refresh_failed)
         } finally {
             refreshing = false
         }
@@ -124,16 +135,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         error = null
         val parsed = parseInput(input)
         if (parsed == null) {
-            error = "Введите сумму, например 1000 или USD 100"
+            error = str(R.string.enter_amount)
             return
         }
         val (amount, code, bad) = parsed
         if (bad != null) {
-            error = "Неизвестная валюта: $bad"
+            error = str(R.string.unknown_currency_fmt, bad)
             return
         }
         if (amount == null) {
-            error = "Не понял сумму"
+            error = str(R.string.amount_not_understood)
             return
         }
         viewModelScope.launch {
@@ -143,10 +154,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             loading = true
             try {
                 val table = repo.getTable(s.source, needed)
-                rows = Converter.rows(table, from, s.base, s.favorites, amount, s.smartUnits)
-                freshness = Converter.freshness(table)
+                rows = Converter.rows(appCtx, table, from, s.base, s.favorites, amount, s.smartUnits)
+                freshness = Converter.freshness(appCtx, table)
+                // Некуда конвертировать (в избранном только исходная валюта) —
+                // молча пустой экран сбивает с толку при первом запуске, поэтому
+                // подсказываем добавить валюты в избранное.
+                if (rows.isEmpty()) error = str(R.string.no_targets_hint)
             } catch (e: Exception) {
-                error = "Источник недоступен. Попробуйте позже."
+                error = str(R.string.source_unavailable)
                 rows = emptyList()
                 freshness = ""
             } finally {
