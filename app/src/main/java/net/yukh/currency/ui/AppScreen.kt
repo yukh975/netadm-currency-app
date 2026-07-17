@@ -27,6 +27,8 @@ import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -410,27 +413,41 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
         }
 
         HorizontalDivider()
-        Text(stringResource(R.string.lang_section), style = MaterialTheme.typography.titleMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.lang_section),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f),
+            )
             // язык приложения: "" = как в системе (дефолт), иначе ru/en.
-            // Смена переписывает pref и пересоздаёт активити — ресурсы
-            // подхватываются в attachBaseContext (см. CurrencyApp.localized)
+            // Выпадающий список (чипы не влезали по ширине). Смена переписывает
+            // pref и пересоздаёт активити — ресурсы подхватываются в
+            // attachBaseContext (см. CurrencyApp.localized)
             val app = context.applicationContext as CurrencyApp
-            listOf(
+            val options = listOf(
                 "" to stringResource(R.string.lang_system),
                 "ru" to stringResource(R.string.lang_ru),
                 "en" to stringResource(R.string.lang_en),
-            ).forEach { (code, title) ->
-                FilterChip(
-                    selected = app.langPref == code,
-                    onClick = {
-                        if (app.langPref != code) {
-                            app.langPref = code
-                            (context as? Activity)?.recreate()
-                        }
-                    },
-                    label = { Text(title) },
-                )
+            )
+            var langMenu by remember { mutableStateOf(false) }
+            Box {
+                TextButton(onClick = { langMenu = true }) {
+                    Text(options.firstOrNull { it.first == app.langPref }?.second ?: options[0].second)
+                }
+                DropdownMenu(expanded = langMenu, onDismissRequest = { langMenu = false }) {
+                    options.forEach { (code, title) ->
+                        DropdownMenuItem(
+                            text = { Text(title) },
+                            onClick = {
+                                langMenu = false
+                                if (app.langPref != code) {
+                                    app.langPref = code
+                                    (context as? Activity)?.recreate()
+                                }
+                            },
+                        )
+                    }
+                }
             }
         }
 
