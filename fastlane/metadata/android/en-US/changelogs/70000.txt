@@ -1,0 +1,1 @@
+Language switcher in Settings: System (default) / Russian / English — applies immediately, including notifications. Direct-download builds now also check for updates automatically on launch (not present in the F-Droid build).

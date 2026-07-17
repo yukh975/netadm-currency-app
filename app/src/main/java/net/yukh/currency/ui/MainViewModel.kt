@@ -10,13 +10,22 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import net.yukh.currency.BuildConfig
 import net.yukh.currency.CurrencyApp
 import net.yukh.currency.R
+import net.yukh.currency.data.ApkInstaller
 import net.yukh.currency.data.AppSettings
 import net.yukh.currency.data.ConversionRow
 import net.yukh.currency.data.Converter
 import net.yukh.currency.data.Currencies
+import net.yukh.currency.data.UpdateChecker
 import net.yukh.currency.work.DailyUpdateWorker
+
+/** Исходы проверки обновления (показываются модалкой поверх любой вкладки). */
+sealed interface UpdateDialog {
+    data class Available(val update: UpdateChecker.Update) : UpdateDialog
+    data class Message(val text: String) : UpdateDialog
+}
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -24,7 +33,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = appCtx.repository
     private val store = appCtx.settingsStore
 
-    private fun str(id: Int, vararg args: Any): String = appCtx.getString(id, *args)
+    // строки — через локализованный контекст (учитывает выбранный язык приложения)
+    private val loc get() = appCtx.l10n()
+    private fun str(id: Int, vararg args: Any): String = loc.getString(id, *args)
 
     val settings: StateFlow<AppSettings> =
         store.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppSettings())
@@ -93,8 +104,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         try {
             // принудительно обновляем из источника — сводка всегда свежая
             val table = repo.getTable(s.source, needed, force = true)
-            summary = Converter.summary(appCtx, table, src, s.favorites, s.smartUnits)
-            summaryFreshness = Converter.freshness(appCtx, table)
+            summary = Converter.summary(loc, table, src, s.favorites, s.smartUnits)
+            summaryFreshness = Converter.freshness(loc, table)
         } catch (e: Exception) {
             summaryError = str(R.string.source_unavailable)
             summary = emptyList()
@@ -109,7 +120,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val s = store.current()
         val table = repo.cachedTable(s.source)
         lastUpdate = if (table != null) {
-            str(R.string.updated_fmt, Converter.lastUpdated(appCtx, table))
+            str(R.string.updated_fmt, Converter.lastUpdated(loc, table))
         } else {
             str(R.string.updated_never)
         }
@@ -123,7 +134,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         refreshError = null
         try {
             val table = repo.getTable(s.source, needed, force = true)
-            lastUpdate = str(R.string.updated_fmt, Converter.lastUpdated(appCtx, table))
+            lastUpdate = str(R.string.updated_fmt, Converter.lastUpdated(loc, table))
         } catch (e: Exception) {
             refreshError = str(R.string.refresh_failed)
         } finally {
@@ -154,8 +165,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             loading = true
             try {
                 val table = repo.getTable(s.source, needed)
-                rows = Converter.rows(appCtx, table, from, s.base, s.favorites, amount, s.smartUnits)
-                freshness = Converter.freshness(appCtx, table)
+                rows = Converter.rows(loc, table, from, s.base, s.favorites, amount, s.smartUnits)
+                freshness = Converter.freshness(loc, table)
                 // Некуда конвертировать (в избранном только исходная валюта) —
                 // молча пустой экран сбивает с толку при первом запуске, поэтому
                 // подсказываем добавить валюты в избранное.
@@ -204,6 +215,98 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun search(query: String) {
         searchResults = Currencies.search(query)
+    }
+
+    // --- Обновление приложения (только flavor direct, UPDATE_ENABLED) ---
+
+    var updateDialog by mutableStateOf<UpdateDialog?>(null)
+        private set
+    var updateStatus by mutableStateOf<String?>(null)   // прогресс скачивания/установки
+        private set
+    var updateBusy by mutableStateOf(false)
+        private set
+
+    /** Ручная проверка (кнопки в «Настройках» и «О программе»): результат
+     *  всегда модалкой — обновление, «последняя версия» или ошибка. */
+    fun checkUpdate() {
+        if (!BuildConfig.UPDATE_ENABLED) return
+        updateBusy = true
+        updateStatus = str(R.string.update_checking)
+        viewModelScope.launch {
+            updateDialog = try {
+                val u = UpdateChecker.check(appCtx.httpClient, BuildConfig.VERSION_NAME)
+                if (u != null) {
+                    UpdateDialog.Available(u)
+                } else {
+                    UpdateDialog.Message(str(R.string.update_latest_fmt, BuildConfig.VERSION_NAME))
+                }
+            } catch (e: Exception) {
+                UpdateDialog.Message(
+                    str(R.string.update_check_failed_fmt, e.message ?: str(R.string.network_error)),
+                )
+            }
+            updateStatus = null
+            updateBusy = false
+        }
+    }
+
+    /** Автопроверка при запуске: не чаще раза в [AUTO_CHECK_INTERVAL_MS];
+     *  молчит, если обновления нет/ошибка сети; версию, отложенную кнопкой
+     *  «Позже», повторно не предлагает. */
+    fun autoCheckUpdate() {
+        if (!BuildConfig.UPDATE_ENABLED) return
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            if (now - store.lastUpdateCheck() < AUTO_CHECK_INTERVAL_MS) return@launch
+            store.setLastUpdateCheck(now)
+            val u = try {
+                UpdateChecker.check(appCtx.httpClient, BuildConfig.VERSION_NAME)
+            } catch (e: Exception) {
+                null  // авто-режим: сетевые ошибки молча игнорируем
+            } ?: return@launch
+            if (u.versionName == store.skippedUpdateVersion()) return@launch
+            if (updateDialog == null) updateDialog = UpdateDialog.Available(u)
+        }
+    }
+
+    /** Закрыть модалку; [skipVersion] — версия, нажатая «Позже» (автопроверка
+     *  её больше не предлагает; ручная проверка предложит снова). */
+    fun dismissUpdateDialog(skipVersion: String? = null) {
+        updateDialog = null
+        if (skipVersion != null) {
+            viewModelScope.launch { store.setSkippedUpdateVersion(skipVersion) }
+        }
+    }
+
+    /** Скачать APK и запустить системный установщик. */
+    fun installUpdate(u: UpdateChecker.Update) {
+        updateDialog = null
+        if (!ApkInstaller.canInstall(appCtx)) {
+            // сначала попросим разрешение ставить APK из этого источника
+            ApkInstaller.requestInstallPermission(appCtx)
+            updateStatus = str(R.string.update_allow_install)
+            return
+        }
+        updateBusy = true
+        updateStatus = str(R.string.update_downloading)
+        viewModelScope.launch {
+            try {
+                val file = ApkInstaller.download(appCtx, appCtx.httpClient, u.apkUrl)
+                updateStatus = str(R.string.update_installing)
+                ApkInstaller.install(appCtx, file)
+            } catch (e: Exception) {
+                updateStatus = str(
+                    R.string.update_download_error_fmt,
+                    e.message ?: str(R.string.unknown),
+                )
+            } finally {
+                updateBusy = false
+            }
+        }
+    }
+
+    private companion object {
+        const val AUTO_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000L  // 6 часов
     }
 
     /** (amount, code|null, badToken|null); null если в строке нет числа. */

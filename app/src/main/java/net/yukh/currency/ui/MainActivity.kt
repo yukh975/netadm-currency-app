@@ -1,6 +1,7 @@
 package net.yukh.currency.ui
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -11,12 +12,19 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
+import net.yukh.currency.CurrencyApp
 import net.yukh.currency.ui.theme.CurrencyTheme
 
 class MainActivity : ComponentActivity() {
 
     private val notificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    // язык приложения: подменяем базовый контекст ДО onCreate, чтобы все
+    // ресурсы Compose брались в выбранной локали (см. CurrencyApp.localized)
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(CurrencyApp.localized(newBase))
+    }
 
     // запрос «открыть сводку» из тапа по уведомлению
     private val openSummary = mutableStateOf(false)

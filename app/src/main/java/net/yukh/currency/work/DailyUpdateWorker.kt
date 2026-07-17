@@ -62,7 +62,9 @@ class DailyUpdateWorker(
             val isNew = table.sourceDate.isNotBlank() && table.sourceDate != marker
 
             if (isNew) {
-                val rows = Converter.summary(applicationContext, table, s.base, s.favorites, s.smartUnits)
+                // строки уведомления — в выбранном языке приложения
+                val loc = app.l10n()
+                val rows = Converter.summary(loc, table, s.base, s.favorites, s.smartUnits)
                 // динамику в тексте уведомления показываем обычным текстом (без цвета)
                 val text = rows.joinToString("\n") { r ->
                     r.text + (r.delta?.let { " ($it)" } ?: "")
@@ -70,14 +72,14 @@ class DailyUpdateWorker(
                 // заголовок — на дату, НА которую действует курс (у ЦБ это завтра)
                 val date = Converter.courseDate(table)
                 val title = if (date != null) {
-                    applicationContext.getString(R.string.notif_title_fmt, date)
+                    loc.getString(R.string.notif_title_fmt, date)
                 } else {
-                    applicationContext.getString(R.string.notif_title)
+                    loc.getString(R.string.notif_title)
                 }
                 notify(
                     applicationContext,
                     title,
-                    text.ifBlank { applicationContext.getString(R.string.notif_no_data) },
+                    text.ifBlank { loc.getString(R.string.notif_no_data) },
                 )
                 app.settingsStore.setLastNotified(s.source, table.sourceDate)
                 Result.success()

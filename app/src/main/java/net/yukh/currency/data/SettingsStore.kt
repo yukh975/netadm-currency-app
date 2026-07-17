@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -40,6 +41,8 @@ class SettingsStore(private val context: Context) {
         val notifyHour = intPreferencesKey("notify_hour")
         val notifyMinute = intPreferencesKey("notify_minute")
         val favorites = stringPreferencesKey("favorites")
+        val skippedUpdate = stringPreferencesKey("skipped_update_version")
+        val lastUpdateCheck = longPreferencesKey("last_update_check")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
@@ -72,6 +75,23 @@ class SettingsStore(private val context: Context) {
 
     suspend fun saveCache(source: String, json: String) =
         context.dataStore.edit { it[stringPreferencesKey("cache_$source")] = json }
+
+    // --- Автопроверка обновлений (flavor direct) ---
+
+    /** Версия, для которой пользователь нажал «Позже»: автопроверка её больше
+     *  не предлагает (ручная проверка кнопкой — предлагает всегда). */
+    suspend fun skippedUpdateVersion(): String =
+        context.dataStore.data.first()[Keys.skippedUpdate] ?: ""
+
+    suspend fun setSkippedUpdateVersion(v: String) =
+        context.dataStore.edit { it[Keys.skippedUpdate] = v }
+
+    /** Время последней автопроверки обновления (millis), для троттлинга. */
+    suspend fun lastUpdateCheck(): Long =
+        context.dataStore.data.first()[Keys.lastUpdateCheck] ?: 0L
+
+    suspend fun setLastUpdateCheck(t: Long) =
+        context.dataStore.edit { it[Keys.lastUpdateCheck] = t }
 
     /** Метка курса, о котором в последний раз слали уведомление (по источнику).
      *  Храним sourceDate: уведомляем только когда курс реально сменился. */

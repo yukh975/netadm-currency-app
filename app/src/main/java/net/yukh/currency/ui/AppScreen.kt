@@ -1,5 +1,6 @@
 package net.yukh.currency.ui
 
+import android.app.Activity
 import android.app.TimePickerDialog
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -42,8 +43,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -60,14 +59,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.launch
 import net.yukh.currency.BuildConfig
 import net.yukh.currency.CurrencyApp
 import net.yukh.currency.R
-import net.yukh.currency.data.ApkInstaller
 import net.yukh.currency.data.AppSettings
 import net.yukh.currency.data.Currencies
-import net.yukh.currency.data.UpdateChecker
 
 @Composable
 fun AppScreen(
@@ -86,6 +82,13 @@ fun AppScreen(
             vm.showSummaryForBase()
             onSummaryConsumed()
         }
+    }
+
+    if (BuildConfig.UPDATE_ENABLED) {
+        // автопроверка обновления при запуске (тихая, с троттлингом в VM);
+        // модалка рендерится здесь — поверх любой вкладки
+        LaunchedEffect(Unit) { vm.autoCheckUpdate() }
+        UpdateDialogHost(vm)
     }
 
     Scaffold(
@@ -132,7 +135,7 @@ fun AppScreen(
                 0 -> ConvertScreen(vm, settings)
                 1 -> FavoritesScreen(vm, settings)
                 2 -> SettingsScreen(vm, settings)
-                else -> AboutScreen()
+                else -> AboutScreen(vm)
             }
         }
     }
@@ -406,6 +409,31 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
             }
         }
 
+        HorizontalDivider()
+        Text(stringResource(R.string.lang_section), style = MaterialTheme.typography.titleMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // язык приложения: "" = как в системе (дефолт), иначе ru/en.
+            // Смена переписывает pref и пересоздаёт активити — ресурсы
+            // подхватываются в attachBaseContext (см. CurrencyApp.localized)
+            val app = context.applicationContext as CurrencyApp
+            listOf(
+                "" to stringResource(R.string.lang_system),
+                "ru" to stringResource(R.string.lang_ru),
+                "en" to stringResource(R.string.lang_en),
+            ).forEach { (code, title) ->
+                FilterChip(
+                    selected = app.langPref == code,
+                    onClick = {
+                        if (app.langPref != code) {
+                            app.langPref = code
+                            (context as? Activity)?.recreate()
+                        }
+                    },
+                    label = { Text(title) },
+                )
+            }
+        }
+
         Spacer(Modifier.width(0.dp))
         Text(
             stringResource(R.string.cache_note),
@@ -418,7 +446,7 @@ private const val SITE_URL = "https://netadm.pro"
 private const val BOT_URL = "https://t.me/netadm_currency_bot"
 
 @Composable
-private fun AboutScreen() {
+private fun AboutScreen(vm: MainViewModel) {
     val uri = LocalUriHandler.current
     Column(
         Modifier
@@ -453,7 +481,7 @@ private fun AboutScreen() {
 
         if (BuildConfig.UPDATE_ENABLED) {
             HorizontalDivider()
-            UpdateSection()
+            UpdateSection(vm)
         }
 
         HorizontalDivider()
@@ -463,90 +491,29 @@ private fun AboutScreen() {
     }
 }
 
-/** Исходы проверки обновления (показываются модалкой). */
-private sealed interface UpdateDialog {
-    data class Available(val update: UpdateChecker.Update) : UpdateDialog
-    data class Info(val message: String) : UpdateDialog
-}
-
-/** Блок «Обновление» на вкладке «О программе» (только для flavor `direct`).
- *  Результат проверки ВСЕГДА показывается модалкой: доступно обновление
- *  (со списком изменений и кнопкой «Установить») либо «последняя версия»/ошибка. */
+/** Блок «Обновление» на вкладке «О программе» (только для flavor `direct`):
+ *  кнопка ручной проверки. Состояние и логика — в [MainViewModel]; модалки
+ *  рендерит [UpdateDialogHost] на уровне [AppScreen] (поверх любой вкладки). */
 @Composable
-private fun UpdateSection() {
-    val context = LocalContext.current
-    val app = context.applicationContext as CurrencyApp
-    val scope = rememberCoroutineScope()
-    var status by remember { mutableStateOf<String?>(null) }   // прогресс скачивания/установки
-    var dialog by remember { mutableStateOf<UpdateDialog?>(null) }
-    var busy by remember { mutableStateOf(false) }
-
-    fun startInstall(u: UpdateChecker.Update) {
-        if (!ApkInstaller.canInstall(context)) {
-            // сначала попросим разрешение ставить APK из этого источника
-            ApkInstaller.requestInstallPermission(context)
-            status = context.getString(R.string.update_allow_install)
-            return
-        }
-        busy = true
-        status = context.getString(R.string.update_downloading)
-        scope.launch {
-            try {
-                val file = ApkInstaller.download(context, app.httpClient, u.apkUrl)
-                status = context.getString(R.string.update_installing)
-                ApkInstaller.install(context, file)
-            } catch (e: Exception) {
-                status = context.getString(
-                    R.string.update_download_error_fmt,
-                    e.message ?: context.getString(R.string.unknown),
-                )
-            } finally {
-                busy = false
-            }
-        }
-    }
-
+private fun UpdateSection(vm: MainViewModel) {
     Text(stringResource(R.string.update_section), style = MaterialTheme.typography.titleSmall)
 
-    Button(
-        enabled = !busy,
-        onClick = {
-            busy = true
-            status = context.getString(R.string.update_checking)
-            scope.launch {
-                val result = try {
-                    val u = UpdateChecker.check(app.httpClient, BuildConfig.VERSION_NAME)
-                    if (u != null) {
-                        UpdateDialog.Available(u)
-                    } else {
-                        UpdateDialog.Info(
-                            context.getString(R.string.update_latest_fmt, BuildConfig.VERSION_NAME),
-                        )
-                    }
-                } catch (e: Exception) {
-                    UpdateDialog.Info(
-                        context.getString(
-                            R.string.update_check_failed_fmt,
-                            e.message ?: context.getString(R.string.network_error),
-                        ),
-                    )
-                }
-                status = null
-                dialog = result
-                busy = false
-            }
-        },
-    ) {
+    Button(enabled = !vm.updateBusy, onClick = { vm.checkUpdate() }) {
         Text(stringResource(R.string.update_check))
     }
 
-    status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+    vm.updateStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+}
 
-    when (val d = dialog) {
+/** Модалки обновления: «доступна версия» (Установить/Позже) или сообщение
+ *  («последняя версия»/ошибка). Показываются и при автопроверке на старте. */
+@Composable
+private fun UpdateDialogHost(vm: MainViewModel) {
+    when (val d = vm.updateDialog) {
         is UpdateDialog.Available -> {
             val u = d.update
             AlertDialog(
-                onDismissRequest = { dialog = null },
+                onDismissRequest = { vm.dismissUpdateDialog() },
                 title = { Text(stringResource(R.string.update_available_fmt, u.versionName)) },
                 text = {
                     Column(
@@ -566,22 +533,25 @@ private fun UpdateSection() {
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = {
-                        dialog = null
-                        startInstall(u)
-                    }) { Text(stringResource(R.string.update_install)) }
+                    TextButton(onClick = { vm.installUpdate(u) }) {
+                        Text(stringResource(R.string.update_install))
+                    }
                 },
                 dismissButton = {
-                    TextButton(onClick = { dialog = null }) { Text(stringResource(R.string.update_later)) }
+                    // «Позже» = не предлагать эту версию автоматически
+                    // (кнопка ручной проверки предложит снова)
+                    TextButton(onClick = { vm.dismissUpdateDialog(skipVersion = u.versionName) }) {
+                        Text(stringResource(R.string.update_later))
+                    }
                 },
             )
         }
-        is UpdateDialog.Info -> AlertDialog(
-            onDismissRequest = { dialog = null },
+        is UpdateDialog.Message -> AlertDialog(
+            onDismissRequest = { vm.dismissUpdateDialog() },
             title = { Text(stringResource(R.string.update_section)) },
-            text = { Text(d.message) },
+            text = { Text(d.text) },
             confirmButton = {
-                TextButton(onClick = { dialog = null }) { Text(stringResource(R.string.ok)) }
+                TextButton(onClick = { vm.dismissUpdateDialog() }) { Text(stringResource(R.string.ok)) }
             },
         )
         null -> {}
