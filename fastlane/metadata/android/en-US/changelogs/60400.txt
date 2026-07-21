@@ -1,0 +1,1 @@
+Background notifications are now more reliable: scheduling moved from WorkManager to AlarmManager (wakes even in Doze), re-armed after reboot. Added a Battery settings button — exclude the app from battery optimization so the system doesn't put it to sleep.

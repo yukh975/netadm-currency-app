@@ -10,7 +10,7 @@ variables:
   # Версия приложения — единая с Telegram-ботом (ручной SemVer, см. CHANGELOG.md).
   # Поднимать вручную при выпуске новой версии — СИНХРОННО с appVersionName и
   # appVersionCode в app/build.gradle.kts (там литералы — требование F-Droid).
-  APP_VERSION: "0.6.3"
+  APP_VERSION: "0.6.4"
 
 # Все джобы по умолчанию — на Docker-раннере: этот инстанс не берёт джобы без
 # тега `docker`. Джобы под другой раннер (например FreeBSD) переопределяют `tags`.

@@ -10,9 +10,9 @@ import androidx.core.app.NotificationCompat
 import net.yukh.currency.ui.MainActivity
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
-import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import net.yukh.currency.CurrencyApp
@@ -22,18 +22,23 @@ import okhttp3.Request
 import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
-import java.util.concurrent.TimeUnit
 
 /**
  * Наблюдение за курсом и уведомление-сводка.
  *
  * Модель (с 0.6.3, решение пользователя): фиксированного времени сводки НЕТ.
- * Периодическая задача раз в [CHECK_INTERVAL_MINUTES] минут (в окне
- * [QUIET_UNTIL_HOUR]–[QUIET_FROM_HOUR] по МСК) проверяет источник, и как
- * только опубликован новый курс (sourceDate сменился с прошлого уведомления —
- * персистентный маркер) — сразу шлёт сводку. «Пустых» уведомлений не бывает;
+ * Проверка раз в полчаса (в окне [QUIET_UNTIL_HOUR]–[QUIET_FROM_HOUR] по МСК):
+ * как только опубликован новый курс (sourceDate сменился с прошлого уведомления
+ * — персистентный маркер), сразу шлём сводку. «Пустых» уведомлений не бывает;
  * ретраи не нужны — следующая проверка сама придёт через полчаса.
  * У ЦБ в нерабочие дни РФ (isdayoff.ru) курс не выходит — сеть не дёргаем.
+ *
+ * Планирование (с 0.6.4) — через [AlarmScheduler] (AlarmManager
+ * `setAndAllowWhileIdle`), а не WorkManager `PeriodicWorkRequest`: периодическую
+ * работу душили Doze и энергосбережение OEM (в фоне тишина по несколько дней,
+ * уведомление прилетало только при открытии приложения). Сам воркер остаётся
+ * одноразовым — его ставит в очередь [enqueueNow] из будильника/при запуске,
+ * а сеть и корутины он тянет надёжно (в отличие от короткого ресивера).
  */
 class DailyUpdateWorker(
     ctx: Context,
@@ -144,7 +149,6 @@ class DailyUpdateWorker(
         private const val LEGACY_RETRY_WORK_NAME = "daily_update_retry"
         private const val NOTIFICATION_ID = 1001
 
-        private const val CHECK_INTERVAL_MINUTES = 30L
         private const val QUIET_UNTIL_HOUR = 8   // МСК: до 08:00 не проверяем
         private const val QUIET_FROM_HOUR = 23   // МСК: с 23:00 не проверяем
 
@@ -160,32 +164,41 @@ class DailyUpdateWorker(
             }
         }
 
-        /** Запланировать периодическое наблюдение за курсом.
-         *  UPDATE — обновляет спецификацию существующей задачи (миграция со
-         *  старой суточной), НЕ сбрасывая расписание при каждом запуске
-         *  приложения (прежний REPLACE отменял ещё не отработавшую сегодняшнюю
-         *  сводку, если приложение открыли после назначенного времени). */
+        /** Включить наблюдение за курсом: поставить будильник (AlarmManager) и
+         *  сразу выполнить догоняющую проверку — чтобы при открытии приложения
+         *  или включении уведомлений пропущенная в фоне сводка пришла тут же.
+         *  Вызывается из onCreate приложения и при включении тумблера. */
         fun ensureScheduled(ctx: Context) {
-            // миграция: подчистить ретрай-цепочку старой модели «сводка в hh:mm»
+            // миграция со старых WorkManager-моделей (периодическая + ретрай-цепочка)
+            WorkManager.getInstance(ctx).cancelUniqueWork(WORK_NAME)
             WorkManager.getInstance(ctx).cancelUniqueWork(LEGACY_RETRY_WORK_NAME)
-            val request = PeriodicWorkRequestBuilder<DailyUpdateWorker>(
-                CHECK_INTERVAL_MINUTES, TimeUnit.MINUTES,
-            )
+            AlarmScheduler.schedule(ctx)
+            enqueueNow(ctx)
+        }
+
+        /** Разовая проверка курса прямо сейчас (сеть — в воркере, поэтому с
+         *  сетевым ограничением). KEEP — если проверка уже в очереди (например
+         *  висит без сети), не плодим дубликаты: она отработает, когда сеть
+         *  вернётся. Вызывается будильником [RateAlarmReceiver] и из
+         *  [ensureScheduled]. */
+        fun enqueueNow(ctx: Context) {
+            val request = OneTimeWorkRequestBuilder<DailyUpdateWorker>()
                 .setConstraints(
                     Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)
                         .build(),
                 )
                 .build()
-            WorkManager.getInstance(ctx).enqueueUniquePeriodicWork(
+            WorkManager.getInstance(ctx).enqueueUniqueWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.UPDATE,
+                ExistingWorkPolicy.KEEP,
                 request,
             )
         }
 
         /** Остановить наблюдение (уведомления выключены в настройках). */
         fun cancel(ctx: Context) {
+            AlarmScheduler.cancel(ctx)
             WorkManager.getInstance(ctx).cancelUniqueWork(WORK_NAME)
             WorkManager.getInstance(ctx).cancelUniqueWork(LEGACY_RETRY_WORK_NAME)
         }

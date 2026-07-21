@@ -30,8 +30,8 @@ android {
         // versionName — ручной SemVer, единый с Telegram-ботом. Схема versionCode:
         //   major*1_000_000 + minor*10_000 + patch*100   (0.5.8 → 50800)
         // Бампить оба синхронно с APP_VERSION в .gitlab-ci.yml.
-        versionCode = 60300
-        versionName = "0.6.3"
+        versionCode = 60400
+        versionName = "0.6.4"
     }
 
     signingConfigs {

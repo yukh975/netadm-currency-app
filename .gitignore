@@ -15,3 +15,14 @@ keystore.properties
 *.keystore
 *.jks
 release.keystore
+
+# Артефакты ветки main (Telegram-бот на Python) живут в этом же репозитории.
+# При переключении веток они остаются untracked в рабочем дереве — без этих
+# правил `git add -A` затягивает их в коммит приложения (инцидент 2026-07-20:
+# в 0.6.4 уехали __pycache__/*.pyc от bot smoke-тестов).
+__pycache__/
+*.pyc
+.env
+bot.db
+bot.db-wal
+bot.db-shm

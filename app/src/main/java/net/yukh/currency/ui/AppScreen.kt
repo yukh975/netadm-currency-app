@@ -1,6 +1,11 @@
 package net.yukh.currency.ui
 
 import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -394,6 +399,38 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
         }
 
         val context = LocalContext.current
+
+        // Фоновая работа уведомлений. На многих прошивках (Xiaomi, Samsung,
+        // Huawei…) система «усыпляет»/останавливает приложение в фоне, и сводка
+        // приходит только при открытии. Единственное клиентское средство —
+        // попросить пользователя снять приложение с оптимизации батареи.
+        if (settings.notify) {
+            val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (pm.isIgnoringBatteryOptimizations(context.packageName)) {
+                Text(
+                    stringResource(R.string.battery_ok),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            } else {
+                Text(
+                    stringResource(R.string.battery_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Button(onClick = {
+                    // экран «О приложении» → пункт «Батарея» есть на всех
+                    // прошивках; прямой запрос-диалог требует разрешения и
+                    // косо оценивается магазинами, поэтому ведём сюда
+                    val intent = Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:${context.packageName}"),
+                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    runCatching { context.startActivity(intent) }
+                }) {
+                    Text(stringResource(R.string.battery_button))
+                }
+            }
+        }
 
         HorizontalDivider()
         Row(verticalAlignment = Alignment.CenterVertically) {

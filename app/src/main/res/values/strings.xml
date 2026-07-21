@@ -36,6 +36,9 @@
     <string name="smart_format_hint">For cheap currencies: “100 RSD = 73 RUB”</string>
     <string name="daily_notification">New rate notification</string>
     <string name="daily_notification_hint">A summary of your favorite rates arrives as soon as the source publishes a new rate (CBR — once per working day)</string>
+    <string name="battery_hint">For notifications to arrive in the background, exclude the app from battery optimization — otherwise the system may put it to sleep and the summary only shows up when you open the app. Open the app info screen and set Battery to “Unrestricted”.</string>
+    <string name="battery_button">Battery settings</string>
+    <string name="battery_ok">✓ Background work is allowed (battery optimization off)</string>
     <string name="cache_note">Rates are cached for 3 hours and refreshed daily. Sources: CBR (cbr-xml-daily.ru) and Google (open.er-api.com).</string>
     <string name="lang_section">Language</string>
     <string name="lang_system">System</string>

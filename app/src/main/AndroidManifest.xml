@@ -5,6 +5,10 @@
     <!-- Реально используемые приложением разрешения -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Переставить будильник проверки курса после перезагрузки/обновления
+         (BootReceiver). Раньше подмешивался транзитивно WorkManager'ом; теперь
+         у нас свой boot-receiver, поэтому объявляем явно. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- WorkManager подмешивает разрешение foreground-сервиса, но мы используем
          только отложенную периодическую задачу (без foreground service) —
@@ -37,5 +41,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Срабатывание будильника проверки курса (AlarmScheduler).
+             exported=false — будим только своим PendingIntent. -->
+        <receiver
+            android:name=".work.RateAlarmReceiver"
+            android:exported="false" />
+
+        <!-- Переставить будильник после перезагрузки устройства и после
+             обновления приложения. exported=true — события шлёт система. -->
+        <receiver
+            android:name=".work.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
