@@ -25,7 +25,8 @@
     <!-- Экран настроек -->
     <string name="rates_source">Источник курсов</string>
     <string name="source_cbr">🇷🇺 ЦБ РФ</string>
-    <string name="source_google">🌐 Google</string>
+    <string name="source_google">🌐 Рыночный курс</string>
+    <string name="rates_source_hint">Рыночный курс — межбанковский (mid-market) курс, тот же, что показывает конвертер Google. Поставщик — ExchangeRate-API (open.er-api.com); это не сервис Google.</string>
     <string name="my_currency">Моя валюта</string>
     <string name="my_currency_hint">Постоянная домашняя валюта. Относительно неё считается сводка в уведомлениях; в конверторе она подставляется как исходная по умолчанию (там её можно временно переключить).\n\nВыбор ниже — из валют вашего избранного (вкладка ⭐ Избранное). Чтобы валюта появилась здесь, добавьте её в избранное.</string>
     <string name="rates_section">Курсы</string>
@@ -38,7 +39,7 @@
     <string name="battery_hint">Чтобы уведомления приходили в фоне, отключите оптимизацию батареи для приложения — иначе система «усыпляет» его и сводка приходит только при открытии. Откройте экран «О приложении» и поставьте «Батарея» → «Без ограничений».</string>
     <string name="battery_button">Настройки батареи</string>
     <string name="battery_ok">✓ Фоновая работа разрешена (оптимизация батареи отключена)</string>
-    <string name="cache_note">Курсы кэшируются на 3 часа и обновляются ежедневно. Источники: ЦБ РФ (cbr-xml-daily.ru) и Google (open.er-api.com).</string>
+    <string name="cache_note">Курсы кэшируются на 3 часа и обновляются ежедневно. Источники: ЦБ РФ (cbr-xml-daily.ru) и ExchangeRate-API (open.er-api.com). При источнике ЦБ РФ приложение также обращается к isdayoff.ru — производственному календарю РФ, — чтобы не опрашивать источник в дни, когда новый курс не публикуется.</string>
     <string name="lang_section">Язык</string>
     <string name="lang_system">Как в системе</string>
     <!-- Названия языков — эндонимы, не переводятся -->
@@ -47,10 +48,10 @@
 
     <!-- О программе -->
     <string name="version_fmt">Версия %1$s</string>
-    <string name="about_description">Конвертер валют по курсам ЦБ РФ или Google. Выберите источник и исходную валюту, добавьте нужные валюты в избранное и вводите сумму — получите перевод во все избранные. Есть удобный формат для дешёвых валют, кэш курсов и ежедневная сводка в выбранное время.</string>
+    <string name="about_description">Конвертер валют по курсам ЦБ РФ или рыночным. Выберите источник и исходную валюту, добавьте нужные валюты в избранное и вводите сумму — получите перевод во все избранные. Есть удобный формат для дешёвых валют, кэш курсов и ежедневная сводка в выбранное время.</string>
     <string name="site_link">🌐 Сайт разработчика — netadm.pro</string>
     <string name="bot_link">✈️ Telegram-бот с тем же функционалом</string>
-    <string name="bot_note">Тот же конвертер работает Telegram-ботом: те же источники (ЦБ РФ / Google), избранные валюты, основная валюта и ежедневная рассылка курсов.</string>
+    <string name="bot_note">Тот же конвертер работает Telegram-ботом: те же источники (ЦБ РФ / рыночный курс), избранные валюты, основная валюта и ежедневная рассылка курсов.</string>
     <string name="copyright">© 2026 Yuriy Khachaturian</string>
     <string name="license_mit">Лицензия MIT</string>
 
@@ -92,7 +93,7 @@
     <string name="freshness_updated_fmt">🕒 Обновлено: %1$s МСК</string>
     <string name="last_updated_fmt">%1$s МСК</string>
     <string name="source_label_cbr">🇷🇺 ЦБ РФ</string>
-    <string name="source_label_google">🌐 Google</string>
+    <string name="source_label_google">🌐 Рыночный курс</string>
 
     <!-- Ежедневное уведомление -->
     <string name="notif_title_fmt">Курсы валют на %1$s</string>

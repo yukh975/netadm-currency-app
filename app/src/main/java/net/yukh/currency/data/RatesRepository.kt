@@ -12,7 +12,7 @@ class RatesRepository(
 ) {
     private val sources: Map<String, RateSource> = mapOf(
         "cbr" to CbrSource(client),
-        "google" to GoogleSource(client),
+        "google" to MarketSource(client),
     )
     private val ttlMs = 3 * 60 * 60 * 1000L
     private val cache = HashMap<String, RateTable>()

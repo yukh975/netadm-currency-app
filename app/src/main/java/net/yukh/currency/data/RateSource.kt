@@ -49,18 +49,26 @@ class CbrSource(private val client: OkHttpClient) : RateSource {
     }
 }
 
-/** «Google» — рыночный курс через open.er-api.com, опорная валюта USD. */
-class GoogleSource(private val client: OkHttpClient) : RateSource {
+/**
+ * Рыночный (межбанковский, mid-market) курс через **ExchangeRate-API**
+ * (`open.er-api.com`), опорная валюта USD. К Google сервис отношения не имеет —
+ * это тот же тип курса, который показывает конвертер Google (в UI подпись
+ * «Рыночный курс», см. `source_google`).
+ *
+ * Идентификатор источника остаётся `google` намеренно: он сохранён в настройках
+ * пользователей (DataStore) и в кэше курсов — переименование сбросило бы выбор.
+ */
+class MarketSource(private val client: OkHttpClient) : RateSource {
     override val id = "google"
 
     override suspend fun fetch(codes: Set<String>): RateTable = withContext(Dispatchers.IO) {
         val req = Request.Builder().url("https://open.er-api.com/v6/latest/USD").build()
         val body = client.newCall(req).execute().use { resp ->
-            if (!resp.isSuccessful) throw IOException("Google: HTTP ${resp.code}")
-            resp.body?.string() ?: throw IOException("Google: пустой ответ")
+            if (!resp.isSuccessful) throw IOException("open.er-api: HTTP ${resp.code}")
+            resp.body?.string() ?: throw IOException("open.er-api: пустой ответ")
         }
         val json = JSONObject(body)
-        if (json.optString("result") != "success") throw IOException("Google: ошибка источника")
+        if (json.optString("result") != "success") throw IOException("open.er-api: ошибка источника")
         val r = json.getJSONObject("rates")
         val rates = HashMap<String, Double>()
         rates["USD"] = 1.0

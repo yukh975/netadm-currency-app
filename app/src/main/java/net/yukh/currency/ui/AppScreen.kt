@@ -339,6 +339,10 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
                 label = { Text(stringResource(R.string.source_google)) },
             )
         }
+        Text(
+            stringResource(R.string.rates_source_hint),
+            style = MaterialTheme.typography.bodySmall,
+        )
 
         HorizontalDivider()
         Text(stringResource(R.string.my_currency), style = MaterialTheme.typography.titleMedium)
