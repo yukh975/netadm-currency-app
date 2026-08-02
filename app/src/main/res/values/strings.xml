@@ -70,6 +70,8 @@
     <string name="update_later">Later</string>
     <string name="update_allow_install">Allow installing from this source and try again.</string>
     <string name="update_downloading">Downloading…</string>
+    <string name="update_progress_fmt">%1$d%% · %2$s of %3$s MB</string>
+    <string name="update_progress_indeterminate_fmt">downloaded %1$s MB</string>
     <string name="update_installing">Starting install…</string>
     <string name="update_download_error_fmt">Download error: %1$s</string>
     <string name="unknown">unknown</string>

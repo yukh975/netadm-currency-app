@@ -1,0 +1,1 @@
+In-app update now shows a download progress bar (percent and MB) and keeps the dialog open while downloading. Sideload build only.

@@ -69,6 +69,8 @@
     <string name="update_later">Позже</string>
     <string name="update_allow_install">Разрешите установку из этого источника и повторите.</string>
     <string name="update_downloading">Скачиваю…</string>
+    <string name="update_progress_fmt">%1$d%% · %2$s из %3$s МБ</string>
+    <string name="update_progress_indeterminate_fmt">скачано %1$s МБ</string>
     <string name="update_installing">Запускаю установку…</string>
     <string name="update_download_error_fmt">Ошибка загрузки: %1$s</string>
     <string name="unknown">неизвестно</string>

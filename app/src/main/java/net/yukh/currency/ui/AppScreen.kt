@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import java.util.Locale
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -571,17 +572,32 @@ private fun UpdateDialogHost(vm: MainViewModel) {
                             u.notes.ifBlank { stringResource(R.string.update_no_changelog) },
                             style = MaterialTheme.typography.bodyMedium,
                         )
+                        vm.updateStatus?.let {
+                            Text(
+                                it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        // во время скачивания — прогресс прямо в модалке
+                        if (vm.updateBusy) {
+                            DownloadProgress(vm.updateProgress, vm.updateGotBytes, vm.updateTotalBytes)
+                        }
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { vm.installUpdate(u) }) {
+                    // кнопки заблокированы, пока идёт загрузка
+                    TextButton(enabled = !vm.updateBusy, onClick = { vm.installUpdate(u) }) {
                         Text(stringResource(R.string.update_install))
                     }
                 },
                 dismissButton = {
                     // «Позже» = не предлагать эту версию автоматически
                     // (кнопка ручной проверки предложит снова)
-                    TextButton(onClick = { vm.dismissUpdateDialog(skipVersion = u.versionName) }) {
+                    TextButton(
+                        enabled = !vm.updateBusy,
+                        onClick = { vm.dismissUpdateDialog(skipVersion = u.versionName) },
+                    ) {
                         Text(stringResource(R.string.update_later))
                     }
                 },
@@ -598,3 +614,29 @@ private fun UpdateDialogHost(vm: MainViewModel) {
         null -> {}
     }
 }
+
+/** Полоса скачивания APK: проценты и мегабайты, если сервер сообщил размер;
+ *  иначе бесконечная полоса и просто «скачано N МБ». */
+@Composable
+private fun DownloadProgress(progress: Float?, got: Long, total: Long) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (progress != null) {
+            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+            Text(
+                stringResource(R.string.update_progress_fmt, (progress * 100).toInt(), mb(got), mb(total)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            LinearProgressIndicator(Modifier.fillMaxWidth())
+            Text(
+                stringResource(R.string.update_progress_indeterminate_fmt, mb(got)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private fun mb(bytes: Long): String =
+    if (bytes <= 0) "0" else String.format(Locale.US, "%.1f", bytes / 1024.0 / 1024.0)

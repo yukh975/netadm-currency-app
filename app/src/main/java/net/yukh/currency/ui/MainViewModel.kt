@@ -219,9 +219,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     var updateDialog by mutableStateOf<UpdateDialog?>(null)
         private set
-    var updateStatus by mutableStateOf<String?>(null)   // прогресс скачивания/установки
+    var updateStatus by mutableStateOf<String?>(null)   // текстовый статус (проверка/ошибка/установка)
         private set
     var updateBusy by mutableStateOf(false)
+        private set
+    // Прогресс скачивания APK (показывается в модалке обновления).
+    var updateProgress by mutableStateOf<Float?>(null)   // null = размер неизвестен
+        private set
+    var updateGotBytes by mutableStateOf(0L)
+        private set
+    var updateTotalBytes by mutableStateOf(-1L)
         private set
 
     /** Ручная проверка (кнопки в «Настройках» и «О программе»): результат
@@ -276,21 +283,31 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Скачать APK и запустить системный установщик. */
+    /** Скачать APK (с прогрессом) и запустить установку. Модалка обновления
+     *  остаётся открытой всё время загрузки и показывает прогресс. */
     fun installUpdate(u: UpdateChecker.Update) {
-        updateDialog = null
         if (!ApkInstaller.canInstall(appCtx)) {
-            // сначала попросим разрешение ставить APK из этого источника
+            // сначала системное разрешение ставить APK из этого источника;
+            // модалку НЕ закрываем — после выдачи повтор «Установить» скачает
             ApkInstaller.requestInstallPermission(appCtx)
             updateStatus = str(R.string.update_allow_install)
             return
         }
         updateBusy = true
+        updateProgress = null
+        updateGotBytes = 0L
+        updateTotalBytes = -1L
         updateStatus = str(R.string.update_downloading)
         viewModelScope.launch {
             try {
-                val file = ApkInstaller.download(appCtx, appCtx.httpClient, u.apkUrl)
+                val file = ApkInstaller.download(appCtx, u.apkUrl) { p, got, total ->
+                    // колбэк из фонового потока; snapshot-state потокобезопасен
+                    updateProgress = p
+                    updateGotBytes = got
+                    updateTotalBytes = total
+                }
                 updateStatus = str(R.string.update_installing)
+                updateDialog = null
                 ApkInstaller.install(appCtx, file)
             } catch (e: Exception) {
                 updateStatus = str(
