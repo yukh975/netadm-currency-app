@@ -7,6 +7,14 @@ variables:
   ANDROID_BUILD_TOOLS: "35.0.0"
   ANDROID_CMDLINE_TOOLS: "11076708"
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+  # ⚠️ Java (sdkmanager, gradle) НЕ смотрит в /etc/gai.conf и лезет по IPv6,
+  # которого в домашней сети нет: dl.google.com ~0.84 МБ/с при автовыборе
+  # против 6.1 по IPv4. Применяется ко всем java-процессам джобы. (рецепт
+  # homepanel, internal-notes: homepanel/history-2026-08-03.md — 40 мин → 4)
+  JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+  # Образ temurin — на базе Ubuntu; archive.ubuntu.com из дома ~0.17 МБ/с,
+  # российское зеркало 8-10 МБ/с (замер с раннера).
+  UBUNTU_MIRROR: "mirror.yandex.ru"
   # Версия приложения — единая с Telegram-ботом (ручной SemVer, см. CHANGELOG.md).
   # Поднимать вручную при выпуске новой версии — СИНХРОННО с appVersionName и
   # appVersionCode в app/build.gradle.kts (там литералы — требование F-Droid).
@@ -44,15 +52,31 @@ stages:
   - release
   - deploy
 
+# Кэш инструментов (SDK + gradle + зависимости) — чтобы не качать каждую сборку.
+# ⚠️ when: always — КЛЮЧЕВОЕ: без него упавшая/отменённая сборка НЕ сохраняет
+# кэш, и следующая тянет SDK и gradle с нуля (грабля homepanel, 30.07.2026).
+# Ключ стабильный (не per-ref) — один кэш на все сборки ветки android.
 cache:
-  key: "$CI_COMMIT_REF_SLUG"
+  key: android-toolchain-v1
+  when: always
   paths:
     - .gradle/
     - .android-sdk/
 
 before_script:
-  - apt-get --quiet update --yes
-  - apt-get --quiet install --yes wget unzip
+  # ⚠️ IPv6 в домашней сети не работает, а зеркала отдают AAAA первыми — apt
+  # висел на таймаутах. ForceIPv4 для apt + приоритет IPv4 в resolver.
+  - echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4
+  - echo 'precedence ::ffff:0:0/96 100' >> /etc/gai.conf
+  # российское зеркало Ubuntu (temurin = Ubuntu). Формат sources зависит от
+  # релиза: jammy — классический sources.list, noble — deb822 ubuntu.sources;
+  # правим оба, какой найдётся.
+  - |
+    for f in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
+      [ -f "$f" ] && sed -i "s|http://archive.ubuntu.com/ubuntu/|http://$UBUNTU_MIRROR/ubuntu/|g; s|http://security.ubuntu.com/ubuntu/|http://$UBUNTU_MIRROR/ubuntu/|g" "$f"
+    done
+  - apt-get update --yes
+  - apt-get install --yes wget unzip
   - export ANDROID_HOME="$CI_PROJECT_DIR/.android-sdk"
   - export ANDROID_SDK_ROOT="$ANDROID_HOME"
   - mkdir -p "$ANDROID_HOME/cmdline-tools"
