@@ -10,7 +10,7 @@ Features:
 • Convert from your currency or any other: the source currency can be switched temporarily without changing settings.
 • Friendly format for cheap currencies: "100 RSD = 73 RUB" instead of fractions.
 • Rates are cached and work offline between updates.
-• Daily summary notification with your favorite rates (time is configurable, 17:00 Moscow time by default); tapping it opens the summary. Rate changes are shown next to each rate.
+• Rate summary notification with your favorite rates — it arrives as soon as the source publishes a new rate; tapping it opens the summary. Rate changes are shown next to each rate.
 • Rate date and last refresh time always visible.
 
 No ads, no sign-up, no personal data collection. All settings stay on your device only.
