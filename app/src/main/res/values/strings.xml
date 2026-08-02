@@ -49,7 +49,7 @@
 
     <!-- About screen -->
     <string name="version_fmt">Version %1$s</string>
-    <string name="about_description">Currency converter using CBR (Bank of Russia) or market rates. Pick a source and a source currency, add the currencies you need to favorites and enter an amount — you get the conversion into all favorites. Includes a smart format for cheap currencies, a rate cache and a daily summary at a chosen time.</string>
+    <string name="about_description">Currency converter using CBR (Bank of Russia) or market rates. Pick a source and a source currency, add the currencies you need to favorites and enter an amount — you get the conversion into all favorites. Includes a smart format for cheap currencies, a rate cache and a rate summary when a new rate is published.</string>
     <string name="site_link">🌐 Developer website — netadm.pro</string>
     <string name="bot_link">✈️ Telegram bot with the same features</string>
     <string name="bot_note">The same converter is available as a Telegram bot: the same sources (CBR / market rate), favorite currencies, home currency and daily rates digest.</string>

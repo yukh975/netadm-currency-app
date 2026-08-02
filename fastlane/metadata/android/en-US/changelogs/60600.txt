@@ -1,0 +1,1 @@
+Documentation accuracy for the F-Droid listing: removed the outdated "17:00 configurable" wording (the notification arrives when a new rate is published) and clarified the CBR source is a third-party mirror (cbr-xml-daily.ru).
