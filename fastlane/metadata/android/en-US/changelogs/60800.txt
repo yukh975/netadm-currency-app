@@ -1,0 +1,1 @@
+The About screen now has an "Our projects" section linking to 3X-UI Manager, the 3x-ui manual and netadm.pro. The developer website link now points to yukh.net. Catalog builds explain that updates come through F-Droid.

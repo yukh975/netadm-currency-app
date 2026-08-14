@@ -12,6 +12,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,7 +25,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.Router
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
@@ -484,7 +490,10 @@ private fun SettingsScreen(vm: MainViewModel, settings: AppSettings) {
     }
 }
 
-private const val SITE_URL = "https://netadm.pro"
+private const val SITE_URL = "https://yukh.net"
+private const val XUI_URL = "https://f-droid.org/packages/net.yukh.xui"
+private const val XUI_MANUAL_URL = "https://github.com/yukh975/3X-UI-Manual"
+private const val NETADM_URL = "https://netadm.pro"
 private const val BOT_URL = "https://t.me/netadm_currency_bot"
 
 @Composable
@@ -521,15 +530,92 @@ private fun AboutScreen(vm: MainViewModel) {
             style = MaterialTheme.typography.bodySmall,
         )
 
+        HorizontalDivider()
         if (BuildConfig.UPDATE_ENABLED) {
-            HorizontalDivider()
             UpdateSection(vm)
+        } else {
+            // Сборка для каталога (fdroid/play) сама себя не обновляет — поясняем откуда обновления
+            Text(
+                stringResource(R.string.update_via_fdroid),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        HorizontalDivider()
+
+        // Кросс-ссылки на другие наши проекты. Тон строго нейтральный (название +
+        // факт), без промо-лексики: у F-Droid есть анти-фича «Promotes other apps».
+        Text(stringResource(R.string.our_projects), style = MaterialTheme.typography.titleMedium)
+        Card(Modifier.fillMaxWidth()) {
+            Column {
+                ProjectRow(
+                    icon = Icons.Outlined.Router,
+                    title = stringResource(R.string.proj_xui),
+                    subtitle = stringResource(R.string.proj_xui_sub),
+                    onClick = { uri.openUri(XUI_URL) },
+                )
+                HorizontalDivider()
+                ProjectRow(
+                    icon = Icons.AutoMirrored.Filled.MenuBook,
+                    title = stringResource(R.string.proj_xui_manual),
+                    subtitle = stringResource(R.string.proj_xui_manual_sub),
+                    onClick = { uri.openUri(XUI_MANUAL_URL) },
+                )
+                HorizontalDivider()
+                ProjectRow(
+                    icon = Icons.Outlined.Dns,
+                    title = stringResource(R.string.proj_netadm),
+                    subtitle = stringResource(R.string.proj_netadm_sub),
+                    onClick = { uri.openUri(NETADM_URL) },
+                )
+            }
         }
 
         HorizontalDivider()
 
         Text(stringResource(R.string.copyright), style = MaterialTheme.typography.bodySmall)
         Text(stringResource(R.string.license_mit), style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/** Строка проекта в блоке «Наши проекты»: иконка · название + пояснение ·
+ *  значок внешней ссылки. Открывает URL по тапу. */
+@Composable
+private fun ProjectRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        Icon(
+            Icons.AutoMirrored.Filled.OpenInNew,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
 

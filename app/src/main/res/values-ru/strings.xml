@@ -49,9 +49,19 @@
     <!-- О программе -->
     <string name="version_fmt">Версия %1$s</string>
     <string name="about_description">Конвертер валют по курсам ЦБ РФ или рыночным. Выберите источник и исходную валюту, добавьте нужные валюты в избранное и вводите сумму — получите перевод во все избранные. Есть удобный формат для дешёвых валют, кэш курсов и уведомление-сводка, когда источник публикует новый курс.</string>
-    <string name="site_link">🌐 Сайт разработчика — netadm.pro</string>
+    <string name="site_link">🌐 Сайт разработчика — yukh.net</string>
     <string name="bot_link">✈️ Telegram-бот с тем же функционалом</string>
     <string name="bot_note">Тот же конвертер работает Telegram-ботом: те же источники (ЦБ РФ / рыночный курс), избранные валюты, основная валюта и ежедневная рассылка курсов.</string>
+    <!-- Наши проекты (экран «О программе») -->
+    <string name="our_projects">Наши проекты</string>
+    <string name="proj_xui">3X-UI Manager</string>
+    <string name="proj_xui_sub">Управление панелью 3x-ui с телефона</string>
+    <string name="proj_xui_manual">Руководство по 3x-ui</string>
+    <string name="proj_xui_manual_sub">Документация по панели 3x-ui</string>
+    <string name="proj_netadm">netadm.pro</string>
+    <string name="proj_netadm_sub">Инструменты для сетевых и системных администраторов</string>
+    <string name="update_via_fdroid">Установлено из F-Droid — обновления приходят через каталог F-Droid.</string>
+
     <string name="copyright">© 2026 Yuriy Khachaturian</string>
     <string name="license_mit">Лицензия MIT</string>
 
