@@ -190,8 +190,15 @@ publish-github:
     - job: assembleRelease
       artifacts: true
     - job: create-release
+  # ⚠️ ЗАПУСК ТОЛЬКО ВРУЧНУЮ. Эта джоба пушит на GitHub-зеркало тег `v$APP_VERSION`
+  # и релиз с fdroid.apk, а F-Droid следит за тегами зеркала (UpdateCheckMode:
+  # Tags) и публикует новую версию в каталог АВТОМАТИЧЕСКИ. То есть запуск этой
+  # джобы = публикация в F-Droid. Держим её ручной, чтобы можно было выпустить
+  # версию в домашний GitLab (и обновить sideload-сборку), не выкатывая её в
+  # каталог до проверки. Когда версия проверена — запустить джобу кнопкой.
   rules:
     - if: '$CI_COMMIT_BRANCH == "android" && $KEYSTORE_BASE64 && $GITHUB_TOKEN'
+      when: manual
   allow_failure: true
   before_script: []
   cache: {}
